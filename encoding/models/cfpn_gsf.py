@@ -30,8 +30,6 @@ class cfpn_gsf(BaseNet):
             outputs.append(auxout)
         return tuple(outputs)
 
-
-
 class cfpn_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
@@ -39,10 +37,6 @@ class cfpn_gsfHead(nn.Module):
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
         inter_channels = in_channels // 4
-        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
