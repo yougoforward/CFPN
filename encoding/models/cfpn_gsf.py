@@ -47,7 +47,7 @@ class cfpn_gsfHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        # self.gff = PAM_Module(in_dim=inter_channels, key_dim=64,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=64,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -140,7 +140,7 @@ class localUp(nn.Module):
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
-        c1 = self.connect(c1) # n, 64, h, w
+        c1 = self.connect(c1)
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
