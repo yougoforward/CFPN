@@ -38,11 +38,11 @@ class cfpn_gsfHead(nn.Module):
         super(cfpn_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
+        inter_channels = in_channels // 4
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        inter_channels = in_channels // 4
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
