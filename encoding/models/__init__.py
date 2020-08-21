@@ -9,6 +9,7 @@ from .deeplabv3 import *
 from .cfpn import *
 from .cfpn_gsf import *
 from .dfpn8_gsf import *
+from .dfpn82_gsf import *
 
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
@@ -21,5 +22,7 @@ def get_segmentation_model(name, **kwargs):
         'cfpn': get_cfpn,
         'cfpn_gsf': get_cfpn_gsf,
         'dfpn8_gsf': get_dfpn8_gsf,
+        'dfpn82_gsf': get_dfpn82_gsf,
+
     }
     return models[name.lower()](**kwargs)
