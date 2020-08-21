@@ -38,7 +38,10 @@ class cfpn_gsfHead(nn.Module):
         super(cfpn_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
-
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
         inter_channels = in_channels // 4
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
@@ -135,8 +138,7 @@ class localUp(nn.Module):
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   nn.ReLU(),
-                                    )
+                                   nn.ReLU())
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
