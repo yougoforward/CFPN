@@ -45,8 +45,7 @@ def test(args):
         model = get_model(args.model_zoo, pretrained=True)
     else:
         model = get_segmentation_model(args.model, dataset = args.dataset,
-                                       backbone = args.backbone, dilated = args.dilated, multi_grid =args.multi_grid,
-                                       stride =args.stride, 
+                                       backbone = args.backbone, dilated = args.dilated,
                                        lateral = args.lateral, jpu = args.jpu, aux = args.aux,
                                        se_loss = args.se_loss, norm_layer = BatchNorm,
                                        base_size = args.base_size, crop_size = args.crop_size)
@@ -58,7 +57,7 @@ def test(args):
         model.load_state_dict(checkpoint['state_dict'])
         print("=> loaded checkpoint '{}' (epoch {})".format(args.resume, checkpoint['epoch']))
 
-    # print(model)
+    print(model)
     scales = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25] if args.dataset == 'citys' else \
         [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
     if not args.ms:
@@ -76,26 +75,15 @@ def test(args):
                 pixAcc, mIoU = metric.get()
                 tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
-            # with torch.no_grad():
-            #     outputs = evaluator.parallel_forward(image)
-            #     predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
-            #                 for output in outputs]
-            # for predict, impath in zip(predicts, dst):
-            #     mask = utils.get_mask_pallete(predict, args.dataset)
-            #     outname = os.path.splitext(impath)[0] + '.png'
-            #     mask.save(os.path.join(outdir, outname))
             with torch.no_grad():
                 outputs = evaluator.parallel_forward(image)
-                # predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
-                #             for output in outputs]
-                predicts = [torch.softmax(output,1).cpu().numpy() for output in outputs]
+                predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
+                            for output in outputs]
             for predict, impath in zip(predicts, dst):
-                # mask = utils.get_mask_pallete(predict, args.dataset)
-                import numpy as np
-                from PIL import Image
-                mask = Image.fromarray((predict[0,1,:,:]*255).astype(np.uint8))
-                outname = os.path.splitext(impath)[0] + '.bmp'
+                mask = utils.get_mask_pallete(predict, args.dataset)
+                outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
+
 if __name__ == "__main__":
     args = Options().parse()
     torch.manual_seed(args.seed)
