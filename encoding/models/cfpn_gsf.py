@@ -119,7 +119,7 @@ class cfpn_gsfHead(nn.Module):
         out = out + se*out
 
         #non-local
-        # out = self.gff(out)
+        out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
