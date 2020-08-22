@@ -125,7 +125,7 @@ class Context2(nn.Module):
                                    norm_layer(width), nn.ReLU())
         self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU(),
-                                   nn.Conv2d(inter_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
+                                   nn.Conv2d(width, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
                                    norm_layer(width), nn.ReLU())
         self.project = nn.Sequential(nn.Conv2d(2*width, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels), nn.ReLU())
