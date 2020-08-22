@@ -52,7 +52,8 @@ class dfpn82_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-
+        self.gff3 = self.gff
+        self.gff4 = self.gff
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
@@ -63,33 +64,33 @@ class dfpn82_gsfHead(nn.Module):
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 6, norm_layer)
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 9, norm_layer)
 
-        # self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(inter_channels),
-        #                            nn.ReLU(),
-        #                            )
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        # self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(inter_channels),
+        #                            nn.ReLU(),
+        #                            )
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         # out4 = self.conv5(c4)
         p4, cat4=self.context4(c4)
-
+        p4 = self.gff4(p4)
         out3 = self.localUp4(c3, p4)
         p3, cat3=self.context3(out3)
-
+        p3=self.gff3(p3)
         out2 = self.localUp3(c2, p3)
         p2, cat2=self.context2(out2)
-
+        p2 = self.gff(p2)
         # out = self.localUp2(c1, p2)
-        # p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
-        # p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        # out = self.project(torch.cat([p2, p3, p4], dim=1))
+        p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
+        p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2, p3, p4], dim=1))
 
-        cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
-        cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
+        # cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
+        # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
+        # out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
@@ -97,7 +98,7 @@ class dfpn82_gsfHead(nn.Module):
         out = out + se*out
 
         #non-local
-        out = self.gff(out)
+        # out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 

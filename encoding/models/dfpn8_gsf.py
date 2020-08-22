@@ -96,9 +96,6 @@ class dfpn8_gsfHead(nn.Module):
         # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
         # out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
       
-    
-
-
         #gp
         gp = self.gap(c4)    
         # se
