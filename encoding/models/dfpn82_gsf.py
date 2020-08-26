@@ -57,7 +57,11 @@ class dfpn82_gsfHead(nn.Module):
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
         self.context4 = Context2(in_channels, inter_channels, inter_channels, 2, norm_layer)
+        self.project4 = nn.Sequential(nn.Conv2d(4*width, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.project3 = nn.Sequential(nn.Conv2d(2*width, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
         self.project = nn.Sequential(nn.Conv2d(8*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
@@ -66,13 +70,15 @@ class dfpn82_gsfHead(nn.Module):
                                    )
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        p4, cat4=self.context4(c4)
+        cat4=self.context4(c4)
+        p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
-        p3, cat3=self.context3(out3)
+        cat3=self.context3(p3)
+        p3 = self.project3(cat3)
         
         out2 = self.localUp3(c2, p3)
-        p2, cat2=self.context2(out2)
+        cat2=self.context2(p2)
         
         cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
