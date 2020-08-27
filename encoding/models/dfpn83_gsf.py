@@ -74,19 +74,24 @@ class dfpn83_gsfHead(nn.Module):
                                    )
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        cat4=self.context4(c4)
+        cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
-        cat3=self.context3(out3)
+        cat3, p3_1, p3_8=self.context3(out3)
         p3 = self.project3(cat3)
         
         out2 = self.localUp3(c2, p3)
-        cat2=self.context2(out2)
+        cat2, p2_1, p2_8=self.context2(out2)
         
-        cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
-        cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
+        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
+        p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
+        p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
+        p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        # cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
+        # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
+        # out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
         # out = self.gff(out)
 
         #gp
@@ -95,6 +100,7 @@ class dfpn83_gsfHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
+
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -133,7 +139,7 @@ class Context(nn.Module):
         feat0 = self.dconv0(x)
         feat1 = self.dconv1(x)
         cat = torch.cat([feat0, feat1], dim=1)  
-        return cat
+        return cat, feat0, feat1
 class Context2(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
         super(Context2, self).__init__()
