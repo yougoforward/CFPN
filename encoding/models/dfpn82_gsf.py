@@ -87,13 +87,15 @@ class dfpn82_gsfHead(nn.Module):
         cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
-        out = self.gff(out)
+        # out = self.gff(out)
 
         #gp
         gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
+        out = self.gff(out)
+
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
