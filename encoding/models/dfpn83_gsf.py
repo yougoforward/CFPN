@@ -87,13 +87,14 @@ class dfpn83_gsfHead(nn.Module):
         cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
-        out = self.gff(out)
+        # out = self.gff(out)
 
         #gp
         gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
+        out = self.gff(out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -174,22 +175,31 @@ class Context2(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels//2),
+                                   nn.ReLU())
+        self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels//2),
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels),
+        self.refine = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels//2),
                                    nn.ReLU(),
                                     )
-
+        self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   )
+        self.relu = nn.ReLU()
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
-        c1 = self.connect(c1) # n, 64, h, w
+        c1p = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        out = torch.cat([c1,c2], dim=1)
+        c2p = self.project(c2)
+        out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
+        out = self.project2(out)
+        out = self.relu(c2+out)
         return out
 
 
