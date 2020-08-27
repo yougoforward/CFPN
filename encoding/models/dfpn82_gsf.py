@@ -74,11 +74,11 @@ class dfpn82_gsfHead(nn.Module):
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
-        cat3=self.context3(p3)
+        cat3=self.context3(out3)
         p3 = self.project3(cat3)
         
         out2 = self.localUp3(c2, p3)
-        cat2=self.context2(p2)
+        cat2=self.context2(out2)
         
         cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
