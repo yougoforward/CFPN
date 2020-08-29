@@ -57,7 +57,7 @@ class dfpn84_gsfHead(nn.Module):
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
         self.context4 = Context2(in_channels, inter_channels, inter_channels, 2, norm_layer)
-        self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project4 = nn.Sequential(nn.Conv2d(4*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project3 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
@@ -74,12 +74,12 @@ class dfpn84_gsfHead(nn.Module):
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
-        out3 = self.gff4(out3)
+        # out3 = self.gff4(out3)
         cat3, p3_1, p3_8=self.context3(out3)
         p3 = self.project3(cat3)
         
         out2 = self.localUp3(c2, p3)
-        out2 = self.gff3(out2)
+        # out2 = self.gff3(out2)
         cat2, p2_1, p2_8=self.context2(out2)
         
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
