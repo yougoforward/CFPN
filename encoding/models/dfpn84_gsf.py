@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['dfpn8_gsf', 'get_dfpn8_gsf']
+__all__ = ['dfpn84_gsf', 'get_dfpn84_gsf']
 
 
-class dfpn8_gsf(BaseNet):
+class dfpn84_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(dfpn8_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(dfpn84_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = dfpn8_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = dfpn84_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class dfpn8_gsf(BaseNet):
 
 
 
-class dfpn8_gsfHead(nn.Module):
+class dfpn84_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(dfpn8_gsfHead, self).__init__()
+        super(dfpn84_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -56,7 +56,7 @@ class dfpn8_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.context4 = Context2(in_channels, inter_channels, inter_channels, 2, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
@@ -64,13 +64,13 @@ class dfpn8_gsfHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(8*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        cat4, p4_1, p4_8=self.context4(c4)
+        cat4, p4_1, p4_2, p4_4, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
@@ -83,6 +83,8 @@ class dfpn8_gsfHead(nn.Module):
         cat2, p2_1, p2_8=self.context2(out2)
         
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
+        p4_2 = F.interpolate(p4_2, (h,w), **self._up_kwargs)
+        p4_4 = F.interpolate(p4_4, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
@@ -161,7 +163,7 @@ class Context2(nn.Module):
         feat2 = self.dconv2(x)
         feat3 = self.dconv3(x)
         cat = torch.cat([feat0, feat1,feat2,feat3], dim=1)  
-        return cat
+        return cat, feat0, feat1,feat2,feat3
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
@@ -194,11 +196,11 @@ class localUp(nn.Module):
 
 
 
-def get_dfpn8_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_dfpn84_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = dfpn8_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = dfpn84_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
