@@ -97,7 +97,7 @@ class dfpn85_gsfHead(nn.Module):
         p_list= [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
         cat = torch.cat(p_list, dim=1)
         scale_att = self.scale_att(cat)
-        st_list = torchp_list.split(scale_att, 1, 1)
+        st_list = torch.split(scale_att, 1, 1)
         out = self.project(torch.cat([p_list[i]*st_list[i] for i in range(6)], dim=1))
 
         # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
