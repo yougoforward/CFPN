@@ -73,11 +73,13 @@ class dfpn85_gsfHead(nn.Module):
                                    nn.ReLU(),
                                    )
         
-        self.scale_att = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU(),
-                                   nn.Conv2d(inter_channels, 6, 1, padding=0, dilation=1, bias=True),
-                                   nn.Sigmoid()
-                                   )
+        # self.scale_att = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(inter_channels), nn.ReLU(),
+        #                            nn.Conv2d(inter_channels, 6, 1, padding=0, dilation=1, bias=True),
+        #                            nn.Sigmoid()
+        #                            )
+        self.scale_att = nn.ModuleList([nn.Sequential(nn.Conv2d(inter_channels, 1, 3, padding=1, dilation=1, bias=True), nn.Sigmoid()) for i in range(6)])
+        
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -90,15 +92,13 @@ class dfpn85_gsfHead(nn.Module):
         out2 = self.localUp3(c2, p3)
         cat2, p2_1, p2_8=self.context2(out2)
         
+        
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         p_list= [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
-        cat = torch.cat(p_list, dim=1)
-        scale_att = self.scale_att(cat)
-        st_list = torch.split(scale_att, 1, 1)
-        out = self.project(torch.cat([p_list[i]*st_list[i] for i in range(6)], dim=1))
+        out = self.project(torch.cat([p_list[i]*self.scale_att[i](p_list[i]) for i in range(6)], dim=1))
 
         # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         # cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
