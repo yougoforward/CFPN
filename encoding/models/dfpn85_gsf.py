@@ -103,7 +103,7 @@ class dfpn85_gsfHead(nn.Module):
         st = self.scale_att(torch.cat([p0,p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         st_list = torch.split(st, 1, 1)
         p_list = [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
-        out = self.project(troch.cat([p_list[i]*st_list[i] for i in range(6)], dim=1))
+        out = self.project(torch.cat([p_list[i]*st_list[i] for i in range(6)], dim=1))
         # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         # cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
