@@ -78,6 +78,7 @@ class dfpn85_gsfHead(nn.Module):
         #                            nn.Conv2d(inter_channels, 6, 1, padding=0, dilation=1, bias=True),
         #                            nn.Sigmoid()
         #                            )
+        
         self.scale_att = nn.ModuleList([nn.Sequential(nn.Conv2d(inter_channels, 1, 3, padding=1, dilation=1, bias=True), nn.Sigmoid()) for i in range(6)])
         
     def forward(self, c1,c2,c3,c4):
@@ -92,15 +93,20 @@ class dfpn85_gsfHead(nn.Module):
         out2 = self.localUp3(c2, p3)
         cat2, p2_1, p2_8=self.context2(out2)
         
-        
+        # scale att
+        p2_1 = self.scale_att[0](p2_1)*p2_1
+        p3_1 = self.scale_att[1](p3_1)*p3_1
+        p4_1 = self.scale_att[2](p4_1)*p4_1
+        p2_8 = self.scale_att[3](p2_8)*p2_8
+        p3_8 = self.scale_att[4](p3_8)*p3_8
+        p4_8 = self.scale_att[5](p4_8)*p4_8
+
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-        p_list= [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
-        out = self.project(torch.cat([p_list[i]*self.scale_att[i](p_list[i]) for i in range(6)], dim=1))
 
-        # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         # cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
         # out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
