@@ -51,9 +51,9 @@ class dfpn8_gsfHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.gff3 = self.gff
-        self.gff4 = self.gff
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer, scale=2)
+        self.gff3 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer, scale=1)
+        self.gff4 = self.gff3
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -76,14 +76,16 @@ class dfpn8_gsfHead(nn.Module):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
+        p4 = self.gff4(p4)
+
                 
         out3 = self.localUp4(c3, p4)
-        out3 = self.gff4(out3)
         cat3, p3_1, p3_8=self.context3(out3)
         p3 = self.project3(cat3)
+        p3 = self.gff3(p3)
+
         
         out2 = self.localUp3(c2, p3)
-        out2 = self.gff3(out2)
         cat2, p2_1, p2_8=self.context2(out2)
         
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
@@ -212,10 +214,12 @@ def get_dfpn8_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
 class PAM_Module(nn.Module):
     """ Position attention module"""
     #Ref from SAGAN
-    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer, scale=1):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
-        self.pool = nn.MaxPool2d(kernel_size=2)
+        self.stride = scale
+        if self.stride>1:
+            self.pool = nn.MaxPool2d(kernel_size=self.stride)
         # self.pool = nn.AvgPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
@@ -237,7 +241,10 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        xp = self.pool(x)
+        if self.stride>1:
+            xp = self.pool(x)
+        else:
+            xp = x
         m_batchsize, C, height, width = x.size()
         m_batchsize, C, hp, wp = xp.size()
         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
