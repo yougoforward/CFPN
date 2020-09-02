@@ -145,8 +145,8 @@ class Context2(nn.Module):
         self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU())
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
+                            nn.Conv2d(in_channels, width, 1, bias=False),
+                            norm_layer(width),
                             nn.ReLU(True))
     def forward(self, x):
         feat0 = self.dconv0(x)

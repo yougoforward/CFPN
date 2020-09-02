@@ -145,8 +145,8 @@ class Context2(nn.Module):
         self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU())
         self.pool = nn.Sequential(nn.AdaptiveAvgPool2d(pool_size),
-                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
+                            nn.Conv2d(in_channels, width, 1, bias=False),
+                            norm_layer(width),
                             nn.ReLU(True))
         self.pool_size = pool_size
     def forward(self, x):
