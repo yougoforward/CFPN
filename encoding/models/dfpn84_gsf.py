@@ -156,7 +156,7 @@ class Context2(nn.Module):
         if self.pool==1:
             cat = torch.cat([feat0, feat1.expand_as(feat0)], dim=1) 
         else:
-            cat = torch.cat([feat0, F.interpolate(fea1, (h,w), mode='bilinear', align_corners=True)], dim=1)
+            cat = torch.cat([feat0, F.interpolate(feat1, (h,w), mode='bilinear', align_corners=True)], dim=1)
         return cat, feat0, feat1
 # class Context2(nn.Module):
 #     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
