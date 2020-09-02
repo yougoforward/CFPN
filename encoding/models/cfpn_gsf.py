@@ -102,7 +102,7 @@ class cfpn_gsfHead(nn.Module):
         out = self.gff(out)
         #
         # se
-        se = self.se(gp)
+        se = self.se(gap)
         out = out + se*out
         out = torch.cat([out, gap.expand_as(out)], dim=1)
 

@@ -95,7 +95,7 @@ class dfpn85_gsfHead(nn.Module):
         # out = self.gff(out)
 
         # #gp
-        # gp = self.gap(c4)    
+        gp = self.gap(c4)    
         # # se
         # se = self.se(gp)
         # out = out + se*out
