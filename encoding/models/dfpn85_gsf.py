@@ -60,7 +60,7 @@ class dfpn85_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.context4 = Context2(in_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
@@ -72,18 +72,9 @@ class dfpn85_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-
-        self.scale_att = nn.Sequential(nn.Conv2d(6*inter_channels+in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, 6, 1, padding=0, dilation=1, bias=True),
-                                   nn.Sigmoid()
-                                   )
-        
-        
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        cat4, p4_1, p4_8=self.context4(c4)
+        cat4, p4_1, gap=self.context4(c4)
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
@@ -93,30 +84,22 @@ class dfpn85_gsfHead(nn.Module):
         out2 = self.localUp3(c2, p3)
         cat2, p2_1, p2_8=self.context2(out2)
         
-        # scale att
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
-        p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
+        # p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-
-        p0 = F.interpolate(c4, (h,w), **self._up_kwargs)
-        st = self.scale_att(torch.cat([p0,p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-        st_list = torch.split(st, 1, 1)
-        p_list = [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
-        out = self.project(torch.cat([p_list[i]*st_list[i] for i in range(6)], dim=1))
-        # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,gap.expand_as(p4_1)], dim=1))
         # cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
         # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
         # out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
         # out = self.gff(out)
 
-        #gp
-        gp = self.gap(c4)    
-        # se
-        se = self.se(gp)
-        out = out + se*out
+        # #gp
+        # gp = self.gap(c4)    
+        # # se
+        # se = self.se(gp)
+        # out = out + se*out
         out = self.gff(out)
-
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -161,15 +144,15 @@ class Context2(nn.Module):
         super(Context2, self).__init__()
         self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU())
-        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(width), nn.ReLU(),
-                                   nn.Conv2d(width, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
-                                   norm_layer(width), nn.ReLU())
+        self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
+                            norm_layer(inter_channels),
+                            nn.ReLU(True))
     def forward(self, x):
         feat0 = self.dconv0(x)
-        feat1 = self.dconv1(x)
-        cat = torch.cat([feat0, feat1], dim=1)  
-        return cat
+        feat1 = self.gap(x)
+        cat = torch.cat([feat0, feat1.expand_as(feat0)], dim=1)  
+        return cat, feat0, feat1
 # class Context2(nn.Module):
 #     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
 #         super(Context2, self).__init__()
@@ -252,9 +235,11 @@ class PAM_Module(nn.Module):
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
-        # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
-        #                                norm_layer(out_dim),
-        #                                nn.ReLU(True))
+        self.se = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Conv2d(value_dim, value_dim//16, 1, bias=False),
+                            nn.ReLU(True),
+                            nn.Conv2d(value_dim//16, value_dim, 1, bias=True),
+                            nn.Sigmoid())
 
     def forward(self, x):
         """
@@ -281,5 +266,6 @@ class PAM_Module(nn.Module):
         gamma = self.gamma(x)
         out = (1-gamma)*out + gamma*x
         # out = self.fuse_conv(out)
+        out = self.se(out)*out+out
         return out
 
