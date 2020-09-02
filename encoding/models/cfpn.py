@@ -40,6 +40,10 @@ class cfpnHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -47,7 +51,7 @@ class cfpnHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        # self.gff = PAM_Module(in_dim=inter_channels, key_dim=64,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -106,12 +110,13 @@ class cfpnHead(nn.Module):
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
-        
+        # out = self.localUp2(c1, out)
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+
         #gp
         gp = self.gap(c4)        
         # se
@@ -119,7 +124,7 @@ class cfpnHead(nn.Module):
         out = out + se*out
 
         #non-local
-        # out = self.gff(out)
+        out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -135,8 +140,7 @@ class localUp(nn.Module):
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   nn.ReLU(),
-                                    )
+                                   nn.ReLU())
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
@@ -145,7 +149,6 @@ class localUp(nn.Module):
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
         return out
-
 
 def get_cfpn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
@@ -165,18 +168,12 @@ class PAM_Module(nn.Module):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
         self.pool = nn.MaxPool2d(kernel_size=2)
-        # self.pool = nn.AvgPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
-        # self.gamma = nn.Parameter(torch.zeros(1))
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
-        # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
-        #                                norm_layer(out_dim),
-        #                                nn.ReLU(True))
 
     def forward(self, x):
         """
