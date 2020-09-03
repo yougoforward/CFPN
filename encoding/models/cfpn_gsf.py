@@ -96,14 +96,14 @@ class cfpn_gsfHead(nn.Module):
 
         # #gp
         # gp = self.gap(c4)    
-        # # se
-        # se = self.se(gp)
-        # out = out + se*out
-        out = self.gff(out)
-        #
         # se
         se = self.se(gap)
         out = out + se*out
+        out = self.gff(out)
+        #
+        # se
+        # se = self.se(gap)
+        # out = out + se*out
         out = torch.cat([out, gap.expand_as(out)], dim=1)
 
         return self.conv6(out)
