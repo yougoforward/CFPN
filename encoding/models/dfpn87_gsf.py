@@ -174,7 +174,7 @@ class psp(nn.Module):
         self.dconv4 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(width*4, out_channels, 3, padding=1, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(width*4, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU(),
                                    )
     def forward(self, x):
