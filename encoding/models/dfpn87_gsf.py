@@ -233,9 +233,9 @@ class PAM_Module(nn.Module):
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
-        self.fuse_conv = nn.Sequential(nn.Conv2d(in_dim, in_dim, 3, padding=1, bias=False),
-                                       norm_layer(in_dim),
-                                       nn.ReLU())
+        # self.fuse_conv = nn.Sequential(nn.Conv2d(in_dim, in_dim, 3, padding=1, bias=False),
+        #                                norm_layer(in_dim),
+        #                                nn.ReLU())
 
     def forward(self, x):
         """
@@ -258,8 +258,8 @@ class PAM_Module(nn.Module):
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
         # out = F.interpolate(out, (height, width), mode="bilinear", align_corners=True)
-
-        gamma = self.gamma(self.fuse_conv(x))
+        # gamma = self.gamma(self.fuse_conv(x))
+        gamma = self.gamma(x)
         out = (1-gamma)*out + gamma*x
         # out = self.fuse_conv(out)
         return out
