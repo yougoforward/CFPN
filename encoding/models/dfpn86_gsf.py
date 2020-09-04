@@ -81,7 +81,7 @@ class dfpn86_gsfHead(nn.Module):
         #gp
         gp = self.gap(c4) 
         cat4, p4_1, p4_8=self.context4(c4)
-        p4 = self.project4(torch.cat([p4_1,p4_8,gp.expand_as(p4_1)]))
+        p4 = self.project4(torch.cat([p4_1,p4_8,gp.expand_as(p4_1)], dim=1))
                 
         out3 = self.localUp4(c3, p4)
         cat3, p3_1, p3_8=self.context3(out3)
