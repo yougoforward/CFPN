@@ -48,7 +48,12 @@ class dfpn85_gsfHead(nn.Module):
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
                             nn.ReLU(True))
-        self.se = nn.Sequential(
+        # self.se = nn.Sequential(
+        #                     nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
+        #                     nn.Sigmoid())
+        self.se = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
+                            nn.ReLU(True),
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
@@ -93,7 +98,8 @@ class dfpn85_gsfHead(nn.Module):
         # cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
         # out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
         # out = self.gff(out)
-
+        se = self.se(out)
+        out = out + se*out
         # #gp
         gap = self.gap(c4)    
         # # se
@@ -235,11 +241,11 @@ class PAM_Module(nn.Module):
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
-        self.se = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(value_dim, value_dim//16, 1, bias=False),
-                            nn.ReLU(True),
-                            nn.Conv2d(value_dim//16, value_dim, 1, bias=True),
-                            nn.Sigmoid())
+        # self.se = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+        #                     nn.Conv2d(value_dim, value_dim//16, 1, bias=False),
+        #                     nn.ReLU(True),
+        #                     nn.Conv2d(value_dim//16, value_dim, 1, bias=True),
+        #                     nn.Sigmoid())
 
     def forward(self, x):
         """
@@ -266,6 +272,6 @@ class PAM_Module(nn.Module):
         gamma = self.gamma(x)
         out = (1-gamma)*out + gamma*x
         # out = self.fuse_conv(out)
-        out = self.se(out)*out+out
+        # out = self.se(out)*out+out
         return out
 
