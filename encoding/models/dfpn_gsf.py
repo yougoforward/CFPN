@@ -20,8 +20,8 @@ class dfpn_gsf(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4,c20,c30,c40)
+        c1, c2, c3, c4 = self.base_forward(x)
+        x = self.head(c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
@@ -95,7 +95,7 @@ class dfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-    def forward(self, c1,c2,c3,c4,c20,c30,c40):
+    def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
