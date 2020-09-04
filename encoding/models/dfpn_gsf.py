@@ -217,7 +217,7 @@ class PAM_Module2(nn.Module):
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.val_conv = nn.Sequential(nn.Conv1d(in_channels=in_dim, out_channels=value_dim, kernel_size=1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
+                                   norm_layer(value_dim),
                                    nn.ReLU()
                                    )
 
