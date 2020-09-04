@@ -15,6 +15,7 @@ from .dfpn84_gsf import *
 from .dfpn85_gsf import *
 from .dfpn86_gsf import *
 from .dfpn87_gsf import *
+from .dfpn_gsf import *
 
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
@@ -26,6 +27,7 @@ def get_segmentation_model(name, **kwargs):
 
         'cfpn': get_cfpn,
         'cfpn_gsf': get_cfpn_gsf,
+        'dfpn_gsf': get_dfpn_gsf,
         'dfpn8_gsf': get_dfpn8_gsf,
         'dfpn82_gsf': get_dfpn82_gsf,
         'dfpn83_gsf': get_dfpn83_gsf,
