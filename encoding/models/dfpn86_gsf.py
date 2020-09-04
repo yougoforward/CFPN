@@ -51,10 +51,11 @@ class dfpn86_gsfHead(nn.Module):
         # self.se = nn.Sequential(
         #                     nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
         #                     nn.Sigmoid())
-        self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
-                            nn.ReLU(True))
+        self.se = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
+                            nn.ReLU(True),
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
+                            nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
         self.gff3 = self.gff
         self.gff4 = self.gff
