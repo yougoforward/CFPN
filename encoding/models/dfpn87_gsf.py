@@ -145,8 +145,8 @@ class psp(nn.Module):
         super(psp, self).__init__()
         self.pool1 = nn.AdaptiveAvgPool2d(1)
         self.pool2 = nn.AdaptiveAvgPool2d(2)
-        self.pool3 = nn.AdaptiveAvgPool2d(3)
-        self.pool4 = nn.AdaptiveAvgPool2d(6)
+        self.pool3 = nn.AdaptiveAvgPool2d(4)
+        self.pool4 = nn.AdaptiveAvgPool2d(8)
         self._up_kwargs = up_kwargs
         self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU())
