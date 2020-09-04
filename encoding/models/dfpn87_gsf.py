@@ -233,7 +233,7 @@ class PAM_Module(nn.Module):
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
-        self.fuse_conv = nn.Sequential(nn.Conv2d(in_dim, in_dim, 3, 1, bias=False),
+        self.fuse_conv = nn.Sequential(nn.Conv2d(in_dim, in_dim, 3, padding=1, bias=False),
                                        norm_layer(in_dim),
                                        nn.ReLU())
 
