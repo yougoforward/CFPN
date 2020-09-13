@@ -77,7 +77,7 @@ class dfpn84_gsfHead(nn.Module):
         _,_, h3,w3 = c3.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
-        p4 = self.gff4(p4)
+        # p4 = self.gff4(p4)
                 
         out3 = self.localUp4(c3, p4)
         cat3, p3_1, p3_8=self.context3(out3)
@@ -85,7 +85,7 @@ class dfpn84_gsfHead(nn.Module):
         p4_83 = F.interpolate(p4_8, (h3,w3), **self._up_kwargs)
         cat3 = torch.cat([p4_13, p4_83, p3_1, p3_8], dim=1)
         p3 = self.project3(cat3)
-        p3 = self.gff3(p3)
+        # p3 = self.gff3(p3)
         
         
         out2 = self.localUp3(c2, p3)
