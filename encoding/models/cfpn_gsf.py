@@ -96,7 +96,7 @@ class cfpn_gsfHead(nn.Module):
         out = out + se*out
         out = self.gff(out)
         
-        out = self.localUp4(c2, out)
+        out = self.localUp2(c2, out)
 
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
