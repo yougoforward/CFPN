@@ -107,10 +107,11 @@ class Context(nn.Module):
                                    norm_layer(width), nn.ReLU())
         # self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
         #                            norm_layer(width), nn.ReLU())
-        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
+        self.dconv1 = nn.Sequential(nn.AvgPool2d(kernel_size= 2*dilation_base+1, padding= dilation_base,
+                                    stride= 1, count_include_pad= False),
+                                    nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU(),
-                                   nn.AvgPool2d(kernel_size= 2*dilation_base+1, padding= dilation_base,
-                                    stride= 1, count_include_pad= False))
+                                   )
 
     def forward(self, x):
         feat0 = self.dconv0(x)
