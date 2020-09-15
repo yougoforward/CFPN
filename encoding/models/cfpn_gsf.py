@@ -144,7 +144,7 @@ class localUp(nn.Module):
         self.connect = nn.Sequential(nn.Conv2d(in_channels1, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
-        self.project = nn.Sequential(nn.Conv2d(out_channels2, out_channels//2, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(in_channels2, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
 
