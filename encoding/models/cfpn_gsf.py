@@ -259,7 +259,7 @@ class PAM_Module(nn.Module):
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
         
-        out = F.interpolate(out, (h,w), mode='bilinear', align_corner=True)
+        out = F.interpolate(out, (h,w), mode='bilinear', align_corners=True)
 
         gamma = self.gamma(x0)
         out = (1-gamma)*out + gamma*x0
