@@ -65,7 +65,7 @@ class cfpn_gsfHead(nn.Module):
                                    )
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        c2 = self.localUp30(c2, c3)        
+        # c2 = self.localUp30(c2, c3)        
         cat4, p4_1, p4_8=self.context4(c4)
                 
         out3 = self.localUp4(c3, cat4)
