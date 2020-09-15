@@ -90,8 +90,8 @@ class cfpn_gsfHead(nn.Module):
         c2 = self.skip2(c2)
         c3 = self.skip3(c3)
         c1 = self.localUp20(c1, c2)
-        c2 = self.localUp20(c2, c3)
-        c1 = self.localUp20(c1, c2)
+        c2 = self.localUp30(c2, c3)
+        c1 = self.localUp21(c1, c2)
         
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
@@ -102,8 +102,8 @@ class cfpn_gsfHead(nn.Module):
         
         out2 = self.localUp3(c2, p3)
         cat2, p2_1, p2_8=self.context2(out2)
-        p2 = self.project2(cat2)
-        out1 = self.localUp2(c1, p2)
+        # p2 = self.project2(cat2)
+        # out1 = self.localUp2(c1, p2)
         
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
@@ -117,7 +117,7 @@ class cfpn_gsfHead(nn.Module):
         out = self.localUp2(c1, out)
         out = out + se*out
         out = self.gff(out)
-        out = self.localUp1(out1, out)
+        out = self.localUp1(c1, out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         out = self.conv6(out)
