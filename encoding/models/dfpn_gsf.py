@@ -108,7 +108,7 @@ class dfpn_gsfHead(nn.Module):
         out = self.gff(out)
         
         #
-        out = torch.cat([out, gp.expand(n, c, hl, wl)], dim=1)
+        out = torch.cat([out, gp.expand_as(out)], dim=1)
         pred1 = self.conv6(out)
         c1 = self.project1(c1)
         out = self.project2(out)
