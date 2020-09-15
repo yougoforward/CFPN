@@ -107,6 +107,7 @@ class dfpn_gsfHead(nn.Module):
         out = self.gff(out)
         c1 = self.project1(c1)
         out = self.project2(out)
+        out = F.interpolate(out, (hl,wl), **self._up_kwargs)
         out = self.project12(torch.cat([c1, out], dim=1))
         #
         out = torch.cat([out, gp.expand(n, c, hl, wl)], dim=1)
