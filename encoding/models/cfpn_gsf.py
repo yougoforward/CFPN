@@ -126,10 +126,12 @@ class localUp(nn.Module):
                                    norm_layer(out_channels//2),
                                    )
         self.relu = nn.ReLU()
+        self.pixelshuffle = nn.PixelShuffle(2)
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1p = self.connect(c1) # n, 64, h, w
         c2 = self.project(c2)
+        c2 = self.pixelshuffle(torch.cat([c2, c2, c2, c2],dim=1))
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2p = self.project2(c2)
         out = torch.cat([c1p,c2p], dim=1)
