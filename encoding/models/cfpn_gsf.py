@@ -117,7 +117,7 @@ class Context(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.gff = PAM_Module(in_dim=out_channels, key_dim=out_channels//8,value_dim=out_channels,out_dim=out_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=out_channels//2, key_dim=out_channels//16,value_dim=out_channels//2,out_dim=out_channels//2,norm_layer=norm_layer)
         self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
