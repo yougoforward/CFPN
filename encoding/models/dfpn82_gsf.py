@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['dfpn82_gsf', 'get_dfpn82_gsf']
+__all__ = ['dfpn2_gsf', 'get_dfpn2_gsf']
 
 
-class dfpn82_gsf(BaseNet):
+class dfpn2_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(dfpn82_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(dfpn2_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = dfpn82_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = dfpn2_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class dfpn82_gsf(BaseNet):
 
 
 
-class dfpn82_gsfHead(nn.Module):
+class dfpn2_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(dfpn82_gsfHead, self).__init__()
+        super(dfpn2_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -88,12 +88,13 @@ class dfpn82_gsfHead(nn.Module):
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
-        out = self.gff(out)
         #gp
         gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
+        out = self.gff(out)
+
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -144,11 +145,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_dfpn82_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_dfpn2_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = dfpn82_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = dfpn2_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
@@ -166,7 +167,9 @@ class PAM_Module(nn.Module):
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
 
-        self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+        self.gamma = nn.Sequential(nn.Conv2d(in_dim, in_dim//4, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(in_dim//4),
+                                   nn.Conv2d(in_channels=in_dim//4, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
 

@@ -52,8 +52,6 @@ class cfpnHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.gff3 = PAM_Module(in_dim=1024, key_dim=1024//8,value_dim=1024,out_dim=1024,norm_layer=norm_layer)
-        self.gff2 = PAM_Module(in_dim=512, key_dim=512//8,value_dim=512,out_dim=512,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -73,10 +71,6 @@ class cfpnHead(nn.Module):
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4):
-        
-        c3 = self.gff3(c3)
-        c2 = self.gff2(c2)
-        
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
@@ -171,7 +165,7 @@ class PAM_Module(nn.Module):
         self.pool = nn.MaxPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
 
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
@@ -186,14 +180,15 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        xp = self.pool(x)
+        # xp = self.pool(x)
+        xp = F.unfold(x, 1, dilation=1, padding=0, stride=2)
         m_batchsize, C, height, width = x.size()
-        m_batchsize, C, hp, wp = xp.size()
+        m_batchsize, C, hpwp = xp.size()
         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
-        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
+        proj_key = self.key_conv(xp)
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
-        proj_value = xp.view(m_batchsize, -1, wp*hp)
+        proj_value = xp
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
