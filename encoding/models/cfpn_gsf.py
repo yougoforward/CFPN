@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['cfpn', 'get_cfpn']
+__all__ = ['cfpn_gsf', 'get_cfpn_gsf']
 
 
-class cfpn(BaseNet):
+class cfpn_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(cfpn, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(cfpn_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = cfpnHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = cfpn_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class cfpn(BaseNet):
 
 
 
-class cfpnHead(nn.Module):
+class cfpn_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(cfpnHead, self).__init__()
+        super(cfpn_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -147,11 +147,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_cfpn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_cfpn_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = cfpn(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = cfpn_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
