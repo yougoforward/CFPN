@@ -142,7 +142,7 @@ class ASPP_TLConv(nn.Module):
 
         return outs
     
-def pixelshuffle(x: torch.Tensor, factor_hw: Tuple[int, int]):
+def pixelshuffle(x: torch.Tensor, factor_hw: tuple[int, int]):
     pH = factor_hw[0]
     pW = factor_hw[1]
     y = x
@@ -154,7 +154,7 @@ def pixelshuffle(x: torch.Tensor, factor_hw: Tuple[int, int]):
     return y
 
 
-def pixelshuffle_invert(x: torch.Tensor, factor_hw: Tuple[int, int]):
+def pixelshuffle_invert(x: torch.Tensor, factor_hw: tuple[int, int]):
     pH = factor_hw[0]
     pW = factor_hw[1]
     y = x
