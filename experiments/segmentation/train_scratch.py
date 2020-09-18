@@ -56,13 +56,11 @@ class Trainer():
                                        base_size = args.base_size, crop_size = args.crop_size)
         # print(model)
         # optimizer using different LR
-        params_list = [{'params': model.parameters(), 'lr': args.lr*10},]
-        # if hasattr(model, 'base'):
-        #     params_list.append({'params': model.base.parameters(), 'lr': args.lr*10})
-        # if hasattr(model, 'head'):
-        #     params_list.append({'params': model.head.parameters(), 'lr': args.lr*10})
-        # if hasattr(model, 'auxlayer'):
-        #     params_list.append({'params': model.auxlayer.parameters(), 'lr': args.lr*10})
+        params_list = [{'params': model.base.parameters(), 'lr': args.lr*10},]
+        if hasattr(model, 'head'):
+            params_list.append({'params': model.head.parameters(), 'lr': args.lr*10})
+        if hasattr(model, 'auxlayer'):
+            params_list.append({'params': model.auxlayer.parameters(), 'lr': args.lr*10})
         optimizer = torch.optim.SGD(params_list, lr=args.lr,
             momentum=args.momentum, weight_decay=args.weight_decay)
         # criterions
