@@ -95,8 +95,8 @@ class fatnet_layer(nn.Module):
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
-        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size^2, out_planes*tl_size^2, 3, padding=1, dilation=1, groups=tl_size^2, bias=False),
-                                   norm_layer(out_planes*tl_size^2), nn.ReLU())
+        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size*tl_size, out_planes*tl_size*tl_size, 3, padding=1, dilation=1, groups=tl_size*tl_size, bias=False),
+                                   norm_layer(out_planes*tl_size*tl_size), nn.ReLU())
         # self.conv_list = nn.ModuleList([nn.Sequential(nn.Conv2d(in_planes, out_planes, 3, padding=1, dilation=1, bias=False),
         #                            norm_layer(out_planes), nn.ReLU()) for i in range(tl_size^2)])
 
