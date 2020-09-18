@@ -9,10 +9,12 @@ from .base import BaseNet
 
 __all__ = ['fatnet', 'get_fatnet']
 
-
+up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 class fatnet(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
         super(fatnet, self).__init__()
+        self._up_kwargs = up_kwargs
+
         self.base = fatnet_base(norm_layer)
         self.head = fatnetHead(48, nclass, norm_layer, up_kwargs=self._up_kwargs)
 
