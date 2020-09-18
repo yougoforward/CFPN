@@ -138,8 +138,9 @@ class ASPP_TLConv(nn.Module):
         outs = F.pixel_shuffle(outs, upscale_factor=self.tl_size)
 
         return outs
-    
-def pixelshuffle(x: torch.Tensor, factor_hw: tuple[int, int]):
+
+
+def pixelshuffle(x, factor_hw):
     pH = factor_hw[0]
     pW = factor_hw[1]
     y = x
@@ -151,7 +152,7 @@ def pixelshuffle(x: torch.Tensor, factor_hw: tuple[int, int]):
     return y
 
 
-def pixelshuffle_invert(x: torch.Tensor, factor_hw: tuple[int, int]):
+def pixelshuffle_invert(x, factor_hw):
     pH = factor_hw[0]
     pW = factor_hw[1]
     y = x
@@ -161,3 +162,26 @@ def pixelshuffle_invert(x: torch.Tensor, factor_hw: tuple[int, int]):
     y = y.permute(0, 1, 3, 5, 2, 4)     # B, iC, pH, pW, oH, oW
     y = y.reshape(B, oC, oH, oW)
     return y
+
+# def pixelshuffle(x: torch.Tensor, factor_hw: tuple[int, int]):
+#     pH = factor_hw[0]
+#     pW = factor_hw[1]
+#     y = x
+#     B, iC, iH, iW = y.shape
+#     oC, oH, oW = iC//(pH*pW), iH*pH, iW*pW
+#     y = y.reshape(B, oC, pH, pW, iH, iW)
+#     y = y.permute(0, 1, 4, 2, 5, 3)     # B, oC, iH, pH, iW, pW
+#     y = y.reshape(B, oC, oH, oW)
+#     return y
+
+
+# def pixelshuffle_invert(x: torch.Tensor, factor_hw: tuple[int, int]):
+#     pH = factor_hw[0]
+#     pW = factor_hw[1]
+#     y = x
+#     B, iC, iH, iW = y.shape
+#     oC, oH, oW = iC*(pH*pW), iH//pH, iW//pW
+#     y = y.reshape(B, iC, oH, pH, oW, pW)
+#     y = y.permute(0, 1, 3, 5, 2, 4)     # B, iC, pH, pW, oH, oW
+#     y = y.reshape(B, oC, oH, oW)
+#     return y
