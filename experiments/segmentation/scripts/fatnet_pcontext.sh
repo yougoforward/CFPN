@@ -2,7 +2,7 @@
 # train
 python -m experiments.segmentation.train_scratch --dataset pcontext \
     --model fatnet --base-size 320 --crop-size 320 \
-    --checkname fatnet_pcontext
+    --checkname fatnet_pcontext --epochs 150
 
 #test [single-scale]
 python -m experiments.segmentation.test_whole --dataset pcontext \
