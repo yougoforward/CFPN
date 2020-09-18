@@ -12,9 +12,9 @@ __all__ = ['fatnet1', 'get_fatnet1']
 
 class fatnet1(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(fatnet1, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(fatnet1, self).__init__()
         self.base = fatnet1_base(norm_layer)
-        self.head = fatnet1Head(48, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = fatnet1Head(48, nclass, norm_layer, up_kwargs=self._up_kwargs)
 
     def forward(self, x):
         imsize = x.size()[2:]
@@ -27,8 +27,7 @@ class fatnet1(nn.Module):
 
 
 class fatnet1Head(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
-                 atrous_rates=(12, 24, 36)):
+    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs=None):
         super(fatnet1Head, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
