@@ -69,18 +69,22 @@ class fatnet_base(nn.Module):
 
     def forward(self, x):
         x1=self.layer1(x)
-        x2=self.layer1(x)
-        x3=self.layer1(x)
-        x4=self.layer1(x)
-        x5=self.layer1(x)
-        x6=self.layer1(x)
-        x7=self.layer1(x)
-        x8=self.layer1(x)
-        x9=self.layer1(x)
-        x10=self.layer1(x)
-        x11=self.layer1(x)
-        x12=self.layer1(x)
-        x13=self.layer1(x)
+        x2=self.layer2(x1)
+        
+        x3=self.layer3(x2)
+        x4=self.layer4(x3)
+        
+        x5=self.layer5(x4)
+        x6=self.layer6(x5)
+        x7=self.layer7(x6)
+        
+        x8=self.layer8(x7)
+        x9=self.layer9(8)
+        x10=self.layer10(x9)
+        
+        x11=self.layer11(x10)
+        x12=self.layer12(x11)
+        x13=self.layer13(x12)
         return x13
 
 

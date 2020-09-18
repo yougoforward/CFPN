@@ -70,26 +70,26 @@ class vggnet_base(nn.Module):
 
     def forward(self, x):
         x1=self.layer1(x)
-        x2=self.layer1(x1)
+        x2=self.layer2(x1)
         x_pool1=self.pool(x2)
         
-        x3=self.layer1(x_pool1)
-        x4=self.layer1(x3)
+        x3=self.layer3(x_pool1)
+        x4=self.layer4(x3)
         x_pool2=self.pool(x4)
         
-        x5=self.layer1(x_pool2)
-        x6=self.layer1(x5)
-        x7=self.layer1(x6)
+        x5=self.layer5(x_pool2)
+        x6=self.layer6(x5)
+        x7=self.layer7(x6)
         x_pool3=self.pool(x7)
         
-        x8=self.layer1(x_pool3)
-        x9=self.layer1(x8)
-        x10=self.layer1(x9)
+        x8=self.layer8(x_pool3)
+        x9=self.layer9(x8)
+        x10=self.layer10(x9)
         x_pool1=self.pool(x10)
         
-        x11=self.layer1(x)
-        x12=self.layer1(x)
-        x13=self.layer1(x)
+        x11=self.layer11(x)
+        x12=self.layer12(x)
+        x13=self.layer13(x)
         return x13
 
 
