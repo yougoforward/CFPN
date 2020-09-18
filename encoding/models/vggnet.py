@@ -85,11 +85,11 @@ class vggnet_base(nn.Module):
         x8=self.layer8(x_pool3)
         x9=self.layer9(x8)
         x10=self.layer10(x9)
-        x_pool1=self.pool(x10)
+        x_pool4=self.pool(x10)
         
-        x11=self.layer11(x)
-        x12=self.layer12(x)
-        x13=self.layer13(x)
+        x11=self.layer11(x_pool4)
+        x12=self.layer12(x11)
+        x13=self.layer13(x12)
         return x13
 
 
