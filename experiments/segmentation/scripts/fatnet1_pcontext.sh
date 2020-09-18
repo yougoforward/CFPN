@@ -1,6 +1,6 @@
 # !/usr/bin/env bash
 # train
-python -m experiments.segmentation.train --dataset pcontext \
+python -m experiments.segmentation.train_scratch --dataset pcontext \
     --model fatnet1 --base-size 520 --crop-size 520 \
     --checkname fatnet1_pcontext
 
