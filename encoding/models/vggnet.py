@@ -100,8 +100,8 @@ class vggnet_layer(nn.Module):
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
-        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size^2, out_planes*tl_size^2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_planes*tl_size^2), nn.ReLU())
+        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size*tl_size, out_planes*tl_size*tl_size, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_planes*tl_size*tl_size), nn.ReLU())
 
     def forward(self, x):
         out = self.conv(x)
