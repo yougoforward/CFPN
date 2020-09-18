@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['fatnet', 'get_fatnet']
+__all__ = ['vggnet', 'get_vggnet']
 
 
-class fatnet(nn.Module):
+class vggnet(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(fatnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
-        self.base = fatnet_base(norm_layer)
-        self.head = fatnetHead(48, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        super(vggnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        self.base = vggnet_base(norm_layer)
+        self.head = vggnetHead(512, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
 
     def forward(self, x):
         imsize = x.size()[2:]
@@ -26,10 +26,10 @@ class fatnet(nn.Module):
 
 
 
-class fatnetHead(nn.Module):
+class vggnetHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(fatnetHead, self).__init__()
+        super(vggnetHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -45,39 +45,48 @@ class fatnetHead(nn.Module):
         out = self.conv5(x)
         return self.conv6(out)
 
-class fatnet_base(nn.Module):
+class vggnet_base(nn.Module):
     def __init__(self, norm_layer=nn.BatchNorm2d):
-        super(fatnet_base, self).__init__()
-        self.layer1 = fatnet_layer(3,64,1,1,norm_layer)
-        self.layer2 = fatnet_layer(64,64,1,1,norm_layer)
+        super(vggnet_base, self).__init__()
+        self.layer1 = vggnet_layer(3,64,1,1,norm_layer)
+        self.layer2 = vggnet_layer(64,64,1,1,norm_layer)
+        self.pool = nn.MaxPool2d(2)
         
-        self.layer3 = fatnet_layer(64,48,1,2,norm_layer)
-        self.layer4 = fatnet_layer(48,48,1,2,norm_layer)
+        self.layer3 = vggnet_layer(64,128,1,1,norm_layer)
+        self.layer4 = vggnet_layer(128,128,1,1,norm_layer)
+
+        self.layer5 = vggnet_layer(128,256,1,1,norm_layer)
+        self.layer6 = vggnet_layer(256,256,1,1,norm_layer)
+        self.layer7 = vggnet_layer(256,256,1,1,norm_layer)
         
-        self.layer5 = fatnet_layer(48,48,1,4,norm_layer)
-        self.layer6 = fatnet_layer(48,48,1,4,norm_layer)
-        self.layer7 = fatnet_layer(48,48,1,4,norm_layer)
+        self.layer8 = vggnet_layer(256,512,1,1,norm_layer)
+        self.layer9 = vggnet_layer(512,512,1,1,norm_layer)
+        self.layer10 = vggnet_layer(512,512,1,1,norm_layer)
         
-        self.layer8 = fatnet_layer(48,48,1,8,norm_layer)
-        self.layer9 = fatnet_layer(48,48,1,8,norm_layer)
-        self.layer10 = fatnet_layer(48,48,1,8,norm_layer)
-        
-        self.layer11 = fatnet_layer(48,48,1,16,norm_layer)
-        self.layer12 = fatnet_layer(48,48,1,16,norm_layer)
-        self.layer13 = fatnet_layer(48,48,1,16,norm_layer)
+        self.layer11 = vggnet_layer(512,512,1,1,norm_layer)
+        self.layer12 = vggnet_layer(512,512,1,1,norm_layer)
+        self.layer13 = vggnet_layer(512,512,1,1,norm_layer)
 
 
     def forward(self, x):
         x1=self.layer1(x)
-        x2=self.layer1(x)
-        x3=self.layer1(x)
-        x4=self.layer1(x)
-        x5=self.layer1(x)
-        x6=self.layer1(x)
-        x7=self.layer1(x)
-        x8=self.layer1(x)
-        x9=self.layer1(x)
-        x10=self.layer1(x)
+        x2=self.layer1(x1)
+        x_pool1=self.pool(x2)
+        
+        x3=self.layer1(x_pool1)
+        x4=self.layer1(x3)
+        x_pool2=self.pool(x4)
+        
+        x5=self.layer1(x_pool2)
+        x6=self.layer1(x5)
+        x7=self.layer1(x6)
+        x_pool3=self.pool(x7)
+        
+        x8=self.layer1(x_pool3)
+        x9=self.layer1(x8)
+        x10=self.layer1(x9)
+        x_pool1=self.pool(x10)
+        
         x11=self.layer1(x)
         x12=self.layer1(x)
         x13=self.layer1(x)
@@ -85,31 +94,25 @@ class fatnet_base(nn.Module):
 
 
 
-class fatnet_layer(nn.Module):
+class vggnet_layer(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, norm_layer=nn.BatchNorm2d):
-        super(fatnet_layer, self).__init__()
+        super(vggnet_layer, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
-        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size^2, out_planes*tl_size^2, 3, padding=1, dilation=1, groups=tl_size^2, bias=False),
+        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size^2, out_planes*tl_size^2, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_planes*tl_size^2), nn.ReLU())
-        # self.conv_list = nn.ModuleList([nn.Sequential(nn.Conv2d(in_planes, out_planes, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_planes), nn.ReLU()) for i in range(tl_size^2)])
 
     def forward(self, x):
-        x_fat = pixelshuffle_invert(x, (self.tl_size, self.tl_size))
-        # x_fat_list = torch.split(x_fat, self.inplanes, dim=1)
-        # out = torch.cat([self.conv_list[i](x_fat_list[i]) for i in range(self.tl_size^2)], dim=1)
-        out = self.conv(x_fat)
-        out = pixelshuffle(out, (self.tl_size, self.tl_size))
+        out = self.conv(x)
         return out
 
 
-def get_fatnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_vggnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = fatnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = vggnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 

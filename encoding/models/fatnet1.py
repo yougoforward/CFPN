@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['fatnet', 'get_fatnet']
+__all__ = ['fatnet1', 'get_fatnet1']
+# add 1x1 channel transform for local patch
 
-
-class fatnet(nn.Module):
+class fatnet1(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(fatnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
-        self.base = fatnet_base(norm_layer)
-        self.head = fatnetHead(48, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        super(fatnet1, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        self.base = fatnet1_base(norm_layer)
+        self.head = fatnet1Head(48, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
 
     def forward(self, x):
         imsize = x.size()[2:]
@@ -26,10 +26,10 @@ class fatnet(nn.Module):
 
 
 
-class fatnetHead(nn.Module):
+class fatnet1Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(fatnetHead, self).__init__()
+        super(fatnet1Head, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -45,39 +45,43 @@ class fatnetHead(nn.Module):
         out = self.conv5(x)
         return self.conv6(out)
 
-class fatnet_base(nn.Module):
+class fatnet1_base(nn.Module):
     def __init__(self, norm_layer=nn.BatchNorm2d):
-        super(fatnet_base, self).__init__()
-        self.layer1 = fatnet_layer(3,64,1,1,norm_layer)
-        self.layer2 = fatnet_layer(64,64,1,1,norm_layer)
+        super(fatnet1_base, self).__init__()
+        self.layer1 = fatnet1_layer(3,64,1,1,norm_layer)
+        self.layer2 = fatnet1_layer(64,64,1,1,norm_layer)
         
-        self.layer3 = fatnet_layer(64,48,1,2,norm_layer)
-        self.layer4 = fatnet_layer(48,48,1,2,norm_layer)
+        self.layer3 = fatnet1_layer(64,48,1,2,norm_layer)
+        self.layer4 = fatnet1_layer(48,48,1,2,norm_layer)
         
-        self.layer5 = fatnet_layer(48,48,1,4,norm_layer)
-        self.layer6 = fatnet_layer(48,48,1,4,norm_layer)
-        self.layer7 = fatnet_layer(48,48,1,4,norm_layer)
+        self.layer5 = fatnet1_layer(48,48,1,4,norm_layer)
+        self.layer6 = fatnet1_layer(48,48,1,4,norm_layer)
+        self.layer7 = fatnet1_layer(48,48,1,4,norm_layer)
         
-        self.layer8 = fatnet_layer(48,48,1,8,norm_layer)
-        self.layer9 = fatnet_layer(48,48,1,8,norm_layer)
-        self.layer10 = fatnet_layer(48,48,1,8,norm_layer)
+        self.layer8 = fatnet1_layer(48,48,1,8,norm_layer)
+        self.layer9 = fatnet1_layer(48,48,1,8,norm_layer)
+        self.layer10 = fatnet1_layer(48,48,1,8,norm_layer)
         
-        self.layer11 = fatnet_layer(48,48,1,16,norm_layer)
-        self.layer12 = fatnet_layer(48,48,1,16,norm_layer)
-        self.layer13 = fatnet_layer(48,48,1,16,norm_layer)
+        self.layer11 = fatnet1_layer(48,48,1,16,norm_layer)
+        self.layer12 = fatnet1_layer(48,48,1,16,norm_layer)
+        self.layer13 = fatnet1_layer(48,48,1,16,norm_layer)
 
 
     def forward(self, x):
         x1=self.layer1(x)
         x2=self.layer1(x)
+        
         x3=self.layer1(x)
         x4=self.layer1(x)
+        
         x5=self.layer1(x)
         x6=self.layer1(x)
         x7=self.layer1(x)
+        
         x8=self.layer1(x)
         x9=self.layer1(x)
         x10=self.layer1(x)
+        
         x11=self.layer1(x)
         x12=self.layer1(x)
         x13=self.layer1(x)
@@ -85,13 +89,15 @@ class fatnet_base(nn.Module):
 
 
 
-class fatnet_layer(nn.Module):
+class fatnet1_layer(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, norm_layer=nn.BatchNorm2d):
-        super(fatnet_layer, self).__init__()
+        super(fatnet1_layer, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
         self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size^2, out_planes*tl_size^2, 3, padding=1, dilation=1, groups=tl_size^2, bias=False),
+                                   norm_layer(out_planes*tl_size^2), nn.ReLU())
+        self.conv2 = nn.Sequential(nn.Conv2d(out_planes*tl_size^2, out_planes*tl_size^2, 1, padding=0, dilation=1, groups=1, bias=False),
                                    norm_layer(out_planes*tl_size^2), nn.ReLU())
         # self.conv_list = nn.ModuleList([nn.Sequential(nn.Conv2d(in_planes, out_planes, 3, padding=1, dilation=1, bias=False),
         #                            norm_layer(out_planes), nn.ReLU()) for i in range(tl_size^2)])
@@ -101,15 +107,17 @@ class fatnet_layer(nn.Module):
         # x_fat_list = torch.split(x_fat, self.inplanes, dim=1)
         # out = torch.cat([self.conv_list[i](x_fat_list[i]) for i in range(self.tl_size^2)], dim=1)
         out = self.conv(x_fat)
+        out = self.conv2(out)
+        
         out = pixelshuffle(out, (self.tl_size, self.tl_size))
         return out
 
 
-def get_fatnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_fatnet1(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = fatnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = fatnet1(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 

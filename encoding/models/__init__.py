@@ -17,6 +17,11 @@ from .dfpn86_gsf import *
 from .dfpn87_gsf import *
 from .dfpn_gsf import *
 
+
+from .vggnet import *
+from .fatnet import *
+from .fatnet1 import *
+
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
     models = {
@@ -35,6 +40,11 @@ def get_segmentation_model(name, **kwargs):
         'dfpn85_gsf': get_dfpn85_gsf,
         'dfpn86_gsf': get_dfpn86_gsf,
         'dfpn87_gsf': get_dfpn87_gsf,
+        
+        
+        'vggnet': get_vggnet,
+        'fatnet': get_fatnet,
+        'fatnet1': get_fatnet1,
 
 
     }
