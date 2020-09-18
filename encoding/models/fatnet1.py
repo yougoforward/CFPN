@@ -31,7 +31,6 @@ class fatnet1(nn.Module):
 class fatnet1Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs=None):
         super(fatnet1Head, self).__init__()
-        self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
         inter_channels = 512
