@@ -30,6 +30,16 @@ class fatnet(nn.Module):
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         return tuple(outputs)
+    
+    def evaluate(self, x, target=None):
+        pred = self.forward(x)
+        if isinstance(pred, (tuple, list)):
+            pred = pred[0]
+        if target is None:
+            return pred
+        correct, labeled = batch_pix_accuracy(pred.data, target.data)
+        inter, union = batch_intersection_union(pred.data, target.data, self.nclass)
+        return correct, labeled, inter, union
 
 
 
