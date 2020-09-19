@@ -94,7 +94,7 @@ class fatnet1_base(nn.Module):
         x7=self.layer7(x6)
         
         x8=self.layer8(x7)
-        x9=self.layer9(8)
+        x9=self.layer9(x8)
         x10=self.layer10(x9)
         
         x11=self.layer11(x10)
