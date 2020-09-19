@@ -32,7 +32,7 @@ class vggnet(nn.Module):
         return tuple(outputs)
     
     def evaluate(self, x, target=None):
-            pred = self.forward(x)
+        pred = self.forward(x)
         if isinstance(pred, (tuple, list)):
             pred = pred[0]
         if target is None:
