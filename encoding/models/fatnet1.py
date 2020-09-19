@@ -11,8 +11,13 @@ __all__ = ['fatnet1', 'get_fatnet1']
 # add 1x1 channel transform for local patch
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 class fatnet1(nn.Module):
-    def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
+    def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d,  base_size=520, crop_size=480, mean=[.485, .456, .406],
+                 std=[.229, .224, .225], **kwargs):
         super(fatnet1, self).__init__()
+        self.mean = mean
+        self.std = std
+        self.base_size = base_size
+        self.crop_size = crop_size
         self._up_kwargs = up_kwargs
 
         self.base = fatnet1_base(norm_layer)
