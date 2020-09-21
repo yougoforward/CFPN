@@ -52,7 +52,7 @@ class dfpn_gsfHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         self.localUp3=localUp2(512, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp2(1024, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
 
         self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
