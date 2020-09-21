@@ -40,10 +40,6 @@ class dfpn_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        # self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
-        #                            norm_layer(inter_channels),
-        #                            nn.ReLU(),
-        #                            )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -55,8 +51,8 @@ class dfpn_gsfHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
-        self.localUp3=localUp(inter_channels, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(inter_channels, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp2(512, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, 2*inter_channels, inter_channels, norm_layer, up_kwargs)
 
         self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
@@ -66,20 +62,8 @@ class dfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.skip3 = nn.Sequential(nn.Conv2d(1024, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU(),
-                                   )
-        self.skip2 = nn.Sequential(nn.Conv2d(512, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU(),
-                                   )
         
     def forward(self, c1,c2,c3,c4):
-        c3 = self.skip3(c3)
-        c2 = self.skip2(c2)
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
                 
@@ -124,6 +108,33 @@ class Context(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels1, in_channels2, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
+        self.connect1 = nn.Sequential(nn.Conv2d(in_channels1, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU())
+        self.project = nn.Sequential(nn.Conv2d(in_channels2, out_channels, 1, padding=0, dilation=1, bias=False),
+                            norm_layer(out_channels),
+                            )
+
+
+        self._up_kwargs = up_kwargs
+        self.refine = nn.Sequential(nn.Conv2d(out_channels*2, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels)
+                                    )
+
+        self.relu = nn.ReLU()
+    def forward(self, c1,c2):
+        n,c,h,w =c1.size()
+        c1p = self.connect1(c1) # n, 64, h, w
+        c2 = self.project(c2)
+        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        out = torch.cat([c1p,c2], dim=1)
+        out = self.refine(out)
+        out = self.relu(c2+out)
+        return out
+
+class localUp2(nn.Module):
+    def __init__(self, in_channels1, in_channels2, out_channels, norm_layer, up_kwargs):
+        super(localUp2, self).__init__()
         self.connect1 = nn.Sequential(nn.Conv2d(in_channels1, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
@@ -155,7 +166,6 @@ class localUp(nn.Module):
         out = self.refine(out)
         out = self.relu(c2+out)
         return out
-
 
 def get_dfpn_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
