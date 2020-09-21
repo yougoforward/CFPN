@@ -118,10 +118,10 @@ class localUp(nn.Module):
 
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(nn.Conv2d(out_channels*2, out_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels)
+                                   norm_layer(out_channels),
+                                   nn.ReLU()
                                     )
 
-        self.relu = nn.ReLU()
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1p = self.connect1(c1) # n, 64, h, w
@@ -129,7 +129,6 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1p,c2], dim=1)
         out = self.refine(out)
-        out = self.relu(c2+out)
         return out
 
 class localUp2(nn.Module):
