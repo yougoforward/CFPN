@@ -70,6 +70,8 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        self.ps2 = nn.PixelShuffle(2)
+        self.ps4 = nn.PixelShuffle(4)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -82,10 +84,10 @@ class cfpn_gsfHead(nn.Module):
         out2 = self.localUp3(c2, p3)
         cat2, p2_1, p2_8=self.context2(out2)
         
-        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
-        p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
-        p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
-        p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
+        p4_1 = F.interpolate(self.ps4(torch.cat([p4_1]*16, dim=1)), (h,w), **self._up_kwargs)
+        p4_8 = F.interpolate(self.ps4(torch.cat([p4_8]*16, dim=1)), (h,w), **self._up_kwargs)
+        p3_1 = F.interpolate(self.ps2(torch.cat([p3_1]*4, dim=1)), (h,w), **self._up_kwargs)
+        p3_8 = F.interpolate(self.ps2(torch.cat([p3_8]*4, dim=1)), (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
         #gp
@@ -117,7 +119,6 @@ class Context(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.gff = PAM_Module(in_dim=out_channels//2, key_dim=out_channels//16,value_dim=out_channels//2,out_dim=out_channels//2,norm_layer=norm_layer)
         self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
@@ -134,11 +135,11 @@ class localUp(nn.Module):
                                    norm_layer(out_channels),
                                    )
         self.relu = nn.ReLU()
+        self.ps2 = nn.PixelShuffle(2)
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
-        c1p = self.connect(c1)
-        c1p = self.gff(c1p)
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        c1p = self.connect(c1) # n, 64, h, w
+        c2 = F.interpolate(self.ps2(torch.cat([c2]*4, dim=1)), (h,w), **self._up_kwargs)
         c2p = self.project(c2)
         out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
