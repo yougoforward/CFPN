@@ -169,14 +169,14 @@ class SA_Module(nn.Module):
         #h attention
         energy_h = torch.matmul(query_h, key_h)#n,w,h,h
         attention_h = torch.softmax(energy_h, -1)
-        value_h = value.permute(0,3,2,1)#n,w,h,c
+        value_h = value.permute(0,3,2,1).contiguous()#n,w,h,c
         value_h = torch.matmul(attention_h,value_h)#n,w,h,c
         value_h = value_h.permute(0,3,2,1)
         
         #w attention
         energy_w = torch.matmul(query_w, key_w)#n,h,w,w
         attention_w = torch.softmax(energy_w, -1)
-        value_w = value.permute(0,2,3,1)#n,h,w,c
+        value_w = value.permute(0,2,3,1).contiguous()#n,h,w,c
         value_w = torch.matmul(attention_w,value_w)#n,h,w,c
         value_w = value_w.permute(0,3,1,2)
         
