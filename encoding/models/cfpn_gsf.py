@@ -121,8 +121,8 @@ class SPool(nn.Module):
     def forward(self, x):
         x = self.project1(x)
         n,c,h,w = x.size()
-        x_h = x.permute(0,2,1,3)#n,h,c,w
-        x_w = x.permute(0,3,1,2)#n,w,c,h
+        x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
+        x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
         
         x_h = self.conv_h(x_h)
         x_w = self.conv_w(x_w)
@@ -169,16 +169,16 @@ class SA_Module(nn.Module):
         #h attention
         energy_h = torch.matmul(query_h, key_h)#n,w,h,h
         attention_h = torch.softmax(energy_h, -1)
-        value_h = value.permute(0,3,2,1)#n,w,h,c
+        value_h = value.permute(0,3,2,1).contiguous()#n,w,h,c
         value_h = torch.matmul(attention_h,value_h)#n,w,h,c
-        value_h = value_h.permute(0,3,2,1).contiguous()
+        value_h = value_h.permute(0,3,2,1)
         
         #w attention
         energy_w = torch.matmul(query_w, key_w)#n,h,w,w
         attention_w = torch.softmax(energy_w, -1)
-        value_w = value.permute(0,2,3,1)#n,h,w,c
+        value_w = value.permute(0,2,3,1).contiguous()#n,h,w,c
         value_w = torch.matmul(attention_w,value_w)#n,h,w,c
-        value_w = value_w.permute(0,3,1,2).contiguous()
+        value_w = value_w.permute(0,3,1,2)
         
         out = value_h+value_w
         return out
