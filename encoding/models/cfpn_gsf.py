@@ -66,12 +66,17 @@ class dfpn83_gsfHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(8*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        self.sa = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.spool = SPool(in_channels, inter_channels, 17, 17, norm_layer)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
+        sp = self.spool(c4)
+        sa = self.sa(c4)
+        
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -86,7 +91,10 @@ class dfpn83_gsfHead(nn.Module):
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        sa = F.interpolate(sa, (h,w), **self._up_kwargs)
+        sp = F.interpolate(sp, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp], dim=1))
 
         #gp
         gp = self.gap(c4)    
@@ -101,18 +109,27 @@ class dfpn83_gsfHead(nn.Module):
         return self.conv6(out)
 
 class SPool(nn.Module):
-    def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
-        super(Context, self).__init__()
-        self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(width), nn.ReLU())
-        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
-                                   norm_layer(width), nn.ReLU())
+    def __init__(self, in_channels, out_channels, height, width, norm_layer):
+        super(SPool, self).__init__()
+        self.conv_h = nn.Sequential(nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False))
+        self.conv_w = nn.Sequential(nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False))
+        self.project = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels), nn.ReLU())
 
     def forward(self, x):
-        feat0 = self.dconv0(x)
-        feat1 = self.dconv1(x)
-        cat = torch.cat([feat0, feat1], dim=1)  
-        return cat, feat0, feat1
+        n,c,h,w = x.size()
+        x_h = x.permute(0,2,1,3)#n,h,c,w
+        x_w = x.permute(0,3,1,2)#n,w,c,h
+        
+        x_h = self.conv_h(x_h)
+        x_w = self.conv_w(x_w)
+        
+        x_h = x_h.permute(0,2,1,3)
+        x_w = x_w.permute(0,2,3,1)
+        
+        out = x_h+x_w
+        out =self.project(out) 
+        return out
 
 class SA_Module(nn.Module):
     """ Position attention module"""
