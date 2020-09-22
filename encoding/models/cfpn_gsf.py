@@ -70,7 +70,7 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sa = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.sa = SA_Module(in_dim=in_channels, key_dim=in_channels//8,value_dim=in_channels,out_dim=inter_channels,norm_layer=norm_layer)
         self.spool = SPool(in_channels, inter_channels, 17, 17, norm_layer)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
