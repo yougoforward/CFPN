@@ -70,7 +70,7 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sa = SA_Module(in_dim=in_channels, key_dim=in_channels//8,value_dim=in_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.sa = SA_Module(in_dim=in_channels, key_dim=in_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
         self.spool = SPool(in_channels, inter_channels, 17, 17, norm_layer)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
@@ -113,10 +113,13 @@ class SPool(nn.Module):
         super(SPool, self).__init__()
         self.conv_h = nn.Sequential(nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False))
         self.conv_w = nn.Sequential(nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False))
-        self.project = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        self.project1 = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels), nn.ReLU())
+        self.project2 = nn.Sequential(nn.Conv2d(out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels), nn.ReLU())
 
     def forward(self, x):
+        x = self.project1(x)
         n,c,h,w = x.size()
         x_h = x.permute(0,2,1,3)#n,h,c,w
         x_w = x.permute(0,3,1,2)#n,w,c,h
@@ -128,7 +131,7 @@ class SPool(nn.Module):
         x_w = x_w.permute(0,2,3,1)
         
         out = x_h+x_w
-        out =self.project(out) 
+        out =self.project2(out) 
         return out
 
 class SA_Module(nn.Module):
@@ -139,6 +142,8 @@ class SA_Module(nn.Module):
         self.chanel_in = in_dim
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.project = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(value_dim), nn.ReLU())
         self.key_dim = key_dim
 
 
@@ -154,6 +159,7 @@ class SA_Module(nn.Module):
         c2 = self.key_dim
         query = self.query_conv(x)
         key = self.key_conv(x)
+        value = self.project(x)
         
         key_h = query.permute(0,3,1,2)#n,w,c2,h
         key_w = query.permute(0,2,1,3)#n,h,c2,w
@@ -163,14 +169,14 @@ class SA_Module(nn.Module):
         #h attention
         energy_h = torch.matmul(query_h, key_h)#n,w,h,h
         attention_h = torch.softmax(energy_h, -1)
-        value_h = x.permute(0,3,2,1)#n,w,h,c
+        value_h = value.permute(0,3,2,1)#n,w,h,c
         value_h = torch.matmul(attention_h,value_h)#n,w,h,c
         value_h = value_h.permute(0,3,2,1)
         
         #w attention
         energy_w = torch.matmul(query_w, key_w)#n,h,w,w
         attention_w = torch.softmax(energy_w, -1)
-        value_w = x.permute(0,2,3,1)#n,h,w,c
+        value_w = value.permute(0,2,3,1)#n,h,w,c
         value_w = torch.matmul(attention_w,value_w)#n,h,w,c
         value_w = value_w.permute(0,3,1,2)
         
