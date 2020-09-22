@@ -176,6 +176,7 @@ class SA_Module(nn.Module):
         #w attention
         energy_w = torch.matmul(query_w, key_w)#n,h,w,w
         attention_w = torch.softmax(energy_w, -1)
+        value_w = value.permute(0,2,3,1)#n,h,w,c
         value_w = torch.matmul(attention_w,value_w)#n,h,w,c
         value_w = value_w.permute(0,3,1,2).contiguous()
         
