@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['cfpn_gsf', 'get_cfpn_gsf']
+__all__ = ['dfpn83_gsf', 'get_dfpn83_gsf']
 
 
-class cfpn_gsf(BaseNet):
+class dfpn83_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(cfpn_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(dfpn83_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = cfpn_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = dfpn83_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class cfpn_gsf(BaseNet):
 
 
 
-class cfpn_gsfHead(nn.Module):
+class dfpn83_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(cfpn_gsfHead, self).__init__()
+        super(dfpn83_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -70,8 +70,6 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.ps2 = nn.PixelShuffle(2)
-        self.ps4 = nn.PixelShuffle(4)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -84,10 +82,10 @@ class cfpn_gsfHead(nn.Module):
         out2 = self.localUp3(c2, p3)
         cat2, p2_1, p2_8=self.context2(out2)
         
-        p4_1 = F.interpolate(self.ps4(torch.cat([p4_1]*16, dim=1)), (h,w), **self._up_kwargs)
-        p4_8 = F.interpolate(self.ps4(torch.cat([p4_8]*16, dim=1)), (h,w), **self._up_kwargs)
-        p3_1 = F.interpolate(self.ps2(torch.cat([p3_1]*4, dim=1)), (h,w), **self._up_kwargs)
-        p3_8 = F.interpolate(self.ps2(torch.cat([p3_8]*4, dim=1)), (h,w), **self._up_kwargs)
+        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
+        p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
+        p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
+        p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
         #gp
@@ -101,6 +99,66 @@ class cfpn_gsfHead(nn.Module):
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
         return self.conv6(out)
+
+class SPool(nn.Module):
+    def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
+        super(Context, self).__init__()
+        self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(width), nn.ReLU())
+        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
+                                   norm_layer(width), nn.ReLU())
+
+    def forward(self, x):
+        feat0 = self.dconv0(x)
+        feat1 = self.dconv1(x)
+        cat = torch.cat([feat0, feat1], dim=1)  
+        return cat, feat0, feat1
+
+class SA_Module(nn.Module):
+    """ Position attention module"""
+    #Ref from SAGAN
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
+        super(SA_Module, self).__init__()
+        self.chanel_in = in_dim
+        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_dim = key_dim
+
+
+    def forward(self, x):
+        """
+            inputs :
+                x : input feature maps( B X C X H X W)
+            returns :
+                out : attention value + input feature
+                attention: B X (HxW) X (HxW)
+        """
+        n, c, h, w = x.size()
+        c2 = self.key_dim
+        query = self.query_conv(x)
+        key = self.key_conv(x)
+        
+        key_h = query.permute(0,3,1,2)#n,w,c2,h
+        key_w = query.permute(0,2,1,3)#n,h,c2,w
+        query_h = key.permute(0,3,2,1)#n,w,h,c2
+        query_w = key.permute(0,2,3,1)#n,h,w,c2
+        
+        #h attention
+        energy_h = torch.matmul(query_h, key_h)#n,w,h,h
+        attention_h = torch.softmax(energy_h, -1)
+        value_h = x.permute(0,3,2,1)#n,w,h,c
+        value_h = torch.matmul(attention_h,value_h)#n,w,h,c
+        value_h = value_h.permute(0,3,2,1)
+        
+        #w attention
+        energy_w = torch.matmul(query_w, key_w)#n,h,w,w
+        attention_w = torch.softmax(energy_w, -1)
+        value_w = x.permute(0,2,3,1)#n,h,w,c
+        value_w = torch.matmul(attention_w,value_w)#n,h,w,c
+        value_w = value_w.permute(0,3,1,2)
+        
+        out = value_h+value_w
+        return out
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
@@ -135,11 +193,10 @@ class localUp(nn.Module):
                                    norm_layer(out_channels),
                                    )
         self.relu = nn.ReLU()
-        self.ps2 = nn.PixelShuffle(2)
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1p = self.connect(c1) # n, 64, h, w
-        c2 = F.interpolate(self.ps2(torch.cat([c2]*4, dim=1)), (h,w), **self._up_kwargs)
+        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2p = self.project(c2)
         out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
@@ -148,11 +205,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_cfpn_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_dfpn83_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = cfpn_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = dfpn83_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
