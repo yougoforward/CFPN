@@ -3,6 +3,7 @@
 # Email: zhang.hang@rutgers.edu 
 # Copyright (c) 2017
 ###########################################################################
+from tensorboardX import SummaryWriter
 
 import os
 import numpy as np
