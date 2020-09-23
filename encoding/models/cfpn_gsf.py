@@ -70,12 +70,12 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sa = SA_Module(in_dim=in_channels, key_dim=in_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.spool = SPool(in_channels, inter_channels, 17, 17, norm_layer)
+        self.sa = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.spool = SPool(inter_channels, inter_channels, 65, 65, norm_layer)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        sp = self.spool(c4)
-        sa = self.sa(c4)
+        # sp = self.spool(c4)
+        # sa = self.sa(c4)
         
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
@@ -92,8 +92,10 @@ class cfpn_gsfHead(nn.Module):
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-        sa = F.interpolate(sa, (h,w), **self._up_kwargs)
-        sp = F.interpolate(sp, (h,w), **self._up_kwargs)
+        # sa = F.interpolate(sa, (h,w), **self._up_kwargs)
+        # sp = F.interpolate(sp, (h,w), **self._up_kwargs)
+        sp = self.spool(out2)
+        sa = self.sa(out2)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp], dim=1))
 
         #gp
