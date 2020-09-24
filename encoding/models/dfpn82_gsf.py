@@ -40,10 +40,10 @@ class dfpn82_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        # self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
-        #                            norm_layer(inter_channels),
-        #                            nn.ReLU(),
-        #                            )
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -76,13 +76,13 @@ class dfpn82_gsfHead(nn.Module):
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
-        gff4 = self.gff4(out2)
+        gff4 = self.gff4(self.conv5(c4))
         cat4 = torch.cat([cat4, gff4], dim=1)
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
         cat3, p3_1, p3_8=self.context3(out3)
-        gff3 = self.gff3(out2)
+        gff3 = self.gff3(out3)
         cat3 = torch.cat([cat3, gff3], dim=1)
         p3 = self.project3(cat3)
         
