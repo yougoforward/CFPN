@@ -141,17 +141,26 @@ class vgg1x1_spool_layer3(nn.Module):
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
-        self.spool = SPool(in_planes, in_planes, height, weight, norm_layer)
-        self.conv = nn.Sequential(nn.Conv2d(in_planes*tl_size*tl_size, out_planes*tl_size*tl_size, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_planes*tl_size*tl_size), nn.ReLU())
+        self.spool = SPool(height, weight, norm_layer)
+        self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_planes))
+        self.conv1 = nn.Sequential(nn.Conv2d(in_planes, in_planes//4, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_planes//4), nn.ReLU())
+        self.conv2 = nn.Sequential(nn.Conv2d(in_planes//4, out_planes, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_planes))
+        self.relu = nn.ReLU()
+        
 
     def forward(self, x):
-        x = self.spool(x)
+        x1 = self.conv1(x)
+        x1 = self.spool(x1)
+        x1 = self.conv2(x1)
         out = self.conv(x)
+        out = self.relu(x1+out)
         return out
 
 class SPool(nn.Module):
-    def __init__(self, in_channels, out_channels, height, width, norm_layer):
+    def __init__(self, height, width, norm_layer):
         super(SPool, self).__init__()
         self.conv_h = nn.Sequential(nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False))
         self.conv_w = nn.Sequential(nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False))
