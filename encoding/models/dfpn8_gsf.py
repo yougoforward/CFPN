@@ -21,7 +21,7 @@ class dfpn8_gsf(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4)
+        x = list(self.head(c1,c2,c3,c4))
         x[0] = F.interpolate(x[0], imsize, **self._up_kwargs)
         # outputs = [x]
         outputs = x
