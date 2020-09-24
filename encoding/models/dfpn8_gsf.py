@@ -22,8 +22,9 @@ class dfpn8_gsf(BaseNet):
         imsize = x.size()[2:]
         c1, c2, c3, c4 = self.base_forward(x)
         x = self.head(c1,c2,c3,c4)
-        x = F.interpolate(x, imsize, **self._up_kwargs)
-        outputs = [x]
+        x[0] = F.interpolate(x[0], imsize, **self._up_kwargs)
+        # outputs = [x]
+        outputs = x
         if self.aux:
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
@@ -54,7 +55,6 @@ class dfpn8_gsfHead(nn.Module):
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
-        self.conv7 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1, bias=False))
         self.conv8 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
         
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
@@ -98,11 +98,10 @@ class dfpn8_gsfHead(nn.Module):
         out = self.gff(out)
 
         #
-        # out = torch.cat([out, gp.expand_as(out)], dim=1)
-        out = self.conv6(out)+self.conv7(gp)
+        out = torch.cat([out, gp.expand_as(out)], dim=1)
         out_se = self.conv8(gp)
 
-        return out
+        return out, out_se
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
