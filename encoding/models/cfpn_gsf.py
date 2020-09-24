@@ -123,7 +123,8 @@ class SPool(nn.Module):
         n,c,h,w = x.size()
         xpool_h = torch.mean(x, dim=2, keepdim=True)
         xpool_w = torch.mean(x, dim=3, keepdim=True)
-        xpool = xpool_h.expand_as(x)+xpool_w.expand_as(x)+self.pool(x)
+        xpool = xpool_h.expand_as(x)+xpool_w.expand_as(x)
+        # xpool = xpool_h.expand_as(x)+xpool_w.expand_as(x)+self.pool(x)
         return xpool
 
 # class SPool(nn.Module):
