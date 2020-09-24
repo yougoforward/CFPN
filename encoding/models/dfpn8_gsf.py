@@ -99,6 +99,7 @@ class dfpn8_gsfHead(nn.Module):
 
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
+        out = self.conv6(out)
         out_se = self.conv8(gp)
 
         return out, out_se
