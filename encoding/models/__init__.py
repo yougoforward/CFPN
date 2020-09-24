@@ -20,6 +20,8 @@ from .dfpn_gsf import *
 
 
 from .vggnet import *
+from .vgg1x1 import *
+from .vgg1x1_spool import *
 from .fatnet import *
 from .fatnet1 import *
 
@@ -45,6 +47,8 @@ def get_segmentation_model(name, **kwargs):
         
         
         'vggnet': get_vggnet,
+        'vgg1x1': get_vgg1x1,
+        'vgg1x1_spool': get_vgg1x1_spool,
         'fatnet': get_fatnet,
         'fatnet1': get_fatnet1,
 
