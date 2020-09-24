@@ -59,6 +59,10 @@ class dfpn87_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
                             nn.ReLU(True))
+        self.gap3 = nn.Sequential(
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
+                            norm_layer(inter_channels),
+                            nn.ReLU(True))
         self.conv8 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
@@ -103,7 +107,7 @@ class dfpn87_gsfHead(nn.Module):
 
         #
         out = self.conv6(torch.cat([feat, gp.expand_as(out)], dim=1))
-        out_se = self.conv8(torch.cat([self.gap2(feat), gp], dim=1)).view(n,-1)
+        out_se = self.conv8(torch.cat([self.gap2(feat), self.gap3(gp)], dim=1)).view(n,-1)
 
         return out, out_se
 
