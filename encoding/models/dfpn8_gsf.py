@@ -73,7 +73,7 @@ class dfpn8_gsfHead(nn.Module):
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4):
-        _,_, h,w = c2.size()
+        n,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -100,7 +100,7 @@ class dfpn8_gsfHead(nn.Module):
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         out = self.conv6(out)
-        out_se = self.conv8(gp)
+        out_se = self.conv8(gp).view(n,-1)
 
         return out, out_se
 

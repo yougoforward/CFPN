@@ -21,9 +21,10 @@ class dfpn87_gsf(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4)
-        x = F.interpolate(x, imsize, **self._up_kwargs)
-        outputs = [x]
+        x = list(self.head(c1,c2,c3,c4))
+        x[0] = F.interpolate(x[0], imsize, **self._up_kwargs)
+        # outputs = [x]
+        outputs = x
         if self.aux:
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
@@ -52,10 +53,14 @@ class dfpn87_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.gff4 = PAM_Module(in_dim=in_channels, key_dim=in_channels//8,value_dim=in_channels,out_dim=in_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
-
+        self.gap2 = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
+                            norm_layer(inter_channels),
+                            nn.ReLU(True))
+        self.conv8 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
+        
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
@@ -72,8 +77,7 @@ class dfpn87_gsfHead(nn.Module):
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4):
-        _,_, h,w = c2.size()
-        c4 =self.gff4(c4)
+        n,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -95,12 +99,13 @@ class dfpn87_gsfHead(nn.Module):
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.gff(out)
+        feat = self.gff(out)
 
         #
-        out = torch.cat([out, gp.expand_as(out)], dim=1)
+        out = self.conv6(torch.cat([feat, gp.expand_as(out)], dim=1))
+        out_se = self.conv8(torch.cat([self.gap2(feat), gp], dim=1)).view(n,-1)
 
-        return self.conv6(out)
+        return out, out_se
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
