@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['cfpn', 'get_cfpn']
+__all__ = ['cfpn2', 'get_cfpn2']
 
 
-class cfpn(BaseNet):
+class cfpn2(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(cfpn, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(cfpn2, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = cfpnHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = cfpn2Head(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class cfpn(BaseNet):
 
 
 
-class cfpnHead(nn.Module):
+class cfpn2Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(cfpnHead, self).__init__()
+        super(cfpn2Head, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -66,14 +66,14 @@ class cfpnHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(8*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(7*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sa1 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.sa2 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        # self.spool = SPool(inter_channels, inter_channels, 65, 65, norm_layer)
-        self.spool = SPool()
+        # self.sa1 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        # self.sa2 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.spool1 = SPool(inter_channels, inter_channels, 65, 65, norm_layer)
+        self.spool2 = SPool(inter_channels, inter_channels, 65, 65, norm_layer)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         # sp = self.spool(c4)
@@ -96,11 +96,9 @@ class cfpnHead(nn.Module):
         # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         # sa = F.interpolate(sa, (h,w), **self._up_kwargs)
         # sp = F.interpolate(sp, (h,w), **self._up_kwargs)
-        # sp = self.spool(out2)
-        # strip pool + local pool
-        sp = self.spool(out2)
-        sa = self.sa2(self.sa1(out2))
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp], dim=1))
+        sp = self.pool2(self.spool1(out2))
+        # sa = self.sa2(self.sa1(out2))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sp], dim=1))
 
         #gp
         gp = self.gap(c4)    
@@ -115,42 +113,30 @@ class cfpnHead(nn.Module):
         return self.conv6(out)
 
 class SPool(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels, out_channels, height, width, norm_layer):
         super(SPool, self).__init__()
-        self.pool = nn.AvgPool2d(kernel_size = 3, stride=1, padding=1)
+        self.conv_h = nn.Sequential(nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False))
+        self.conv_w = nn.Sequential(nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False))
+        self.project1 = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels), nn.ReLU())
+        self.project2 = nn.Sequential(nn.Conv2d(out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels), nn.ReLU())
 
     def forward(self, x):
+        # x = self.project1(x)
         n,c,h,w = x.size()
-        xpool_h = torch.mean(x, dim=2, keepdim=True)
-        xpool_w = torch.mean(x, dim=3, keepdim=True)
-        xpool = xpool_h.expand_as(x)+xpool_w.expand_as(x)+self.pool(x)
-        return xpool
-
-# class SPool(nn.Module):
-#     def __init__(self, in_channels, out_channels, height, width, norm_layer):
-#         super(SPool, self).__init__()
-#         self.conv_h = nn.Sequential(nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False))
-#         self.conv_w = nn.Sequential(nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False))
-#         self.project1 = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-#                                    norm_layer(out_channels), nn.ReLU())
-#         self.project2 = nn.Sequential(nn.Conv2d(out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-#                                    norm_layer(out_channels), nn.ReLU())
-
-#     def forward(self, x):
-#         # x = self.project1(x)
-#         n,c,h,w = x.size()
-#         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
-#         x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
+        x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
+        x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
         
-#         x_h = self.conv_h(x_h)
-#         x_w = self.conv_w(x_w)
+        x_h = self.conv_h(x_h)
+        x_w = self.conv_w(x_w)
         
-#         x_h = x_h.permute(0,2,1,3)
-#         x_w = x_w.permute(0,2,3,1)
+        x_h = x_h.permute(0,2,1,3)
+        x_w = x_w.permute(0,2,3,1)
         
-#         out = x_h+x_w
-#         # out =self.project2(out) 
-#         return out
+        out = x_h+x_w
+        # out =self.project2(out) 
+        return out
 
 class SA_Module(nn.Module):
     """ Position attention module"""
@@ -160,8 +146,8 @@ class SA_Module(nn.Module):
         self.chanel_in = in_dim
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        # self.project = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(value_dim), nn.ReLU())
+        self.project = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(value_dim), nn.ReLU())
         self.key_dim = key_dim
 
 
@@ -188,14 +174,14 @@ class SA_Module(nn.Module):
         #h attention
         energy_h = torch.matmul(query_h, key_h)#n,w,h,h
         attention_h = torch.softmax(energy_h, -1)
-        value_h = value.permute(0,3,2,1)#n,w,h,c
+        value_h = value.permute(0,3,2,1).contiguous()#n,w,h,c
         value_h = torch.matmul(attention_h,value_h)#n,w,h,c
         value_h = value_h.permute(0,3,2,1)
         
         #w attention
         energy_w = torch.matmul(query_w, key_w)#n,h,w,w
         attention_w = torch.softmax(energy_w, -1)
-        value_w = value.permute(0,2,3,1)#n,h,w,c
+        value_w = value.permute(0,2,3,1).contiguous()#n,h,w,c
         value_w = torch.matmul(attention_w,value_w)#n,h,w,c
         value_w = value_w.permute(0,3,1,2)
         
@@ -247,11 +233,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_cfpn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_cfpn2(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = cfpn(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = cfpn2(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 

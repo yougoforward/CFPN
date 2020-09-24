@@ -7,6 +7,7 @@ from .encnet import *
 from .deeplabv3 import *
 
 from .cfpn import *
+from .cfpn2 import *
 from .cfpn_gsf import *
 from .dfpn8_gsf import *
 from .dfpn82_gsf import *
@@ -31,6 +32,7 @@ def get_segmentation_model(name, **kwargs):
         'deeplab': get_deeplab,
 
         'cfpn': get_cfpn,
+        'cfpn2': get_cfpn2,
         'cfpn_gsf': get_cfpn_gsf,
         'dfpn_gsf': get_dfpn_gsf,
         'dfpn8_gsf': get_dfpn8_gsf,
