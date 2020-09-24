@@ -66,12 +66,12 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(8*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(7*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sa1 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.sa2 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        # self.sa1 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        # self.sa2 = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
         # self.spool = SPool(inter_channels, inter_channels, 65, 65, norm_layer)
         self.spool = SPool()
     def forward(self, c1,c2,c3,c4):
@@ -99,8 +99,8 @@ class cfpn_gsfHead(nn.Module):
         # sp = self.spool(out2)
         # strip pool + local pool
         sp = self.spool(out2)
-        sa = self.sa2(self.sa1(out2))
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp], dim=1))
+        # sa = self.sa2(self.sa1(out2))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8,sp], dim=1))
 
         #gp
         gp = self.gap(c4)    
