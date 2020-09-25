@@ -78,9 +78,9 @@ class vgg1x1_spool_base(nn.Module):
         self.layer9 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
         self.layer10 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
         
-        self.layer11 = vgg1x1_spool_layer3(512,512,1,1,320,320,norm_layer)
-        self.layer12 = vgg1x1_spool_layer3(512,512,1,1,320,320,norm_layer)
-        self.layer13 = vgg1x1_spool_layer3(512,512,1,1,320,320,norm_layer)
+        self.layer11 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
+        self.layer12 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
+        self.layer13 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
 
 
     def forward(self, x):
@@ -136,7 +136,7 @@ class vgg1x1_spool_layer2(nn.Module):
         return out
 
 class vgg1x1_spool_layer3(nn.Module):
-    def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=320, weight=320, norm_layer=nn.BatchNorm2d):
+    def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, weight=256, norm_layer=nn.BatchNorm2d):
         super(vgg1x1_spool_layer2, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
