@@ -7,21 +7,21 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['vgg_sa', 'get_vgg_sa']
+__all__ = ['vgg_sa_spool', 'get_vgg_sa_spool']
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
-class vgg_sa(nn.Module):
+class vgg_sa_spool(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, base_size=520, crop_size=480, mean=[.485, .456, .406],
                  std=[.229, .224, .225], **kwargs):
-        super(vgg_sa, self).__init__()
+        super(vgg_sa_spool, self).__init__()
         self.mean = mean
         self.std = std
         self.base_size = base_size
         self.crop_size = crop_size
         self._up_kwargs = up_kwargs
-        self.base = vgg_sa_base(norm_layer)
-        self.head = vgg_saHead(512, nclass, norm_layer, up_kwargs=self._up_kwargs)
+        self.base = vgg_sa_spool_base(norm_layer)
+        self.head = vgg_sa_spoolHead(512, nclass, norm_layer, up_kwargs=self._up_kwargs)
 
     def forward(self, x):
         imsize = x.size()[2:]
@@ -43,9 +43,9 @@ class vgg_sa(nn.Module):
 
 
 
-class vgg_saHead(nn.Module):
+class vgg_sa_spoolHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs=None):
-        super(vgg_saHead, self).__init__()
+        super(vgg_sa_spoolHead, self).__init__()
         self._up_kwargs = up_kwargs
 
         inter_channels = 512
@@ -60,32 +60,32 @@ class vgg_saHead(nn.Module):
         out = self.conv5(x)
         return self.conv6(out)
 
-class vgg_sa_base(nn.Module):
+class vgg_sa_spool_base(nn.Module):
     def __init__(self, norm_layer=nn.BatchNorm2d):
-        super(vgg_sa_base, self).__init__()
-        self.layer1 = vgg_sa_layer(3,64,1,1,norm_layer)
-        self.layer2 = vgg_sa_layer(64,64,1,1,norm_layer)
-        self.layer2_spool = vgg_sa_layer3(64,64,1,1,256,256,norm_layer)
+        super(vgg_sa_spool_base, self).__init__()
+        self.layer1 = vgg_sa_spool_layer(3,64,1,1,norm_layer)
+        self.layer2 = vgg_sa_spool_layer(64,64,1,1,norm_layer)
+        self.layer2_spool = vgg_sa_spool_layer3(64,64,1,1,256,256,norm_layer)
         self.pool = nn.MaxPool2d(2)
         
-        self.layer3 = vgg_sa_layer(64,128,1,1,norm_layer)
-        self.layer4 = vgg_sa_layer(128,128,1,1,norm_layer)
-        self.layer4_spool = vgg_sa_layer3(128,128,1,1,128,128,norm_layer)
+        self.layer3 = vgg_sa_spool_layer(64,128,1,1,norm_layer)
+        self.layer4 = vgg_sa_spool_layer(128,128,1,1,norm_layer)
+        self.layer4_spool = vgg_sa_spool_layer3(128,128,1,1,128,128,norm_layer)
 
-        self.layer5 = vgg_sa_layer(128,256,1,1,norm_layer)
-        self.layer6 = vgg_sa_layer(256,256,1,1,norm_layer)
-        self.layer7 = vgg_sa_layer(256,256,1,1,norm_layer)
-        self.layer7_spool = vgg_sa_layer3(256,256,1,1,64,64,norm_layer)
+        self.layer5 = vgg_sa_spool_layer(128,256,1,1,norm_layer)
+        self.layer6 = vgg_sa_spool_layer(256,256,1,1,norm_layer)
+        self.layer7 = vgg_sa_spool_layer(256,256,1,1,norm_layer)
+        self.layer7_spool = vgg_sa_spool_layer3(256,256,1,1,64,64,norm_layer)
         
-        self.layer8 = vgg_sa_layer(256,512,1,1,norm_layer)
-        self.layer9 = vgg_sa_layer(512,512,1,1,norm_layer)
-        self.layer10 = vgg_sa_layer(512,512,1,1,norm_layer)
-        self.layer10_spool = vgg_sa_layer3(512,512,1,1,32,32,norm_layer)
+        self.layer8 = vgg_sa_spool_layer(256,512,1,1,norm_layer)
+        self.layer9 = vgg_sa_spool_layer(512,512,1,1,norm_layer)
+        self.layer10 = vgg_sa_spool_layer(512,512,1,1,norm_layer)
+        self.layer10_spool = vgg_sa_spool_layer3(512,512,1,1,32,32,norm_layer)
         
-        self.layer11 = vgg_sa_layer(512,512,1,1,256,256,norm_layer)
-        self.layer12 = vgg_sa_layer(512,512,1,1,256,256,norm_layer)
-        self.layer13 = vgg_sa_layer(512,512,1,1,256,256,norm_layer)
-        self.layer13_spool = vgg_sa_layer3(512,512,1,1,16,16,norm_layer)
+        self.layer11 = vgg_sa_spool_layer(512,512,1,1,256,256,norm_layer)
+        self.layer12 = vgg_sa_spool_layer(512,512,1,1,256,256,norm_layer)
+        self.layer13 = vgg_sa_spool_layer(512,512,1,1,256,256,norm_layer)
+        self.layer13_spool = vgg_sa_spool_layer3(512,512,1,1,16,16,norm_layer)
 
     def forward(self, x):
         x1=self.layer1(x)
@@ -118,9 +118,9 @@ class vgg_sa_base(nn.Module):
 
 
 
-class vgg_sa_layer(nn.Module):
+class vgg_sa_spool_layer(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, norm_layer=nn.BatchNorm2d):
-        super(vgg_sa_layer, self).__init__()
+        super(vgg_sa_spool_layer, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
@@ -131,9 +131,9 @@ class vgg_sa_layer(nn.Module):
         out = self.conv(x)
         return out
     
-class vgg_sa_layer2(nn.Module):
+class vgg_sa_spool_layer2(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, norm_layer=nn.BatchNorm2d):
-        super(vgg_sa_layer2, self).__init__()
+        super(vgg_sa_spool_layer2, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
@@ -144,14 +144,14 @@ class vgg_sa_layer2(nn.Module):
         out = self.conv(x)
         return out
 
-class vgg_sa_layer3(nn.Module):
+class vgg_sa_spool_layer3(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, weight=256, norm_layer=nn.BatchNorm2d):
-        super(vgg_sa_layer3, self).__init__()
+        super(vgg_sa_spool_layer3, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
         self.sa = SA_Module(in_planes//4, in_planes//8, norm_layer)
-        # self.spool = SPool(height, weight, norm_layer)
+        self.spool = SPool(height, weight, norm_layer)
         self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_planes))
         self.conv1 = nn.Sequential(nn.Conv2d(in_planes, in_planes//4, 1, padding=0, dilation=1, bias=False),
@@ -164,7 +164,7 @@ class vgg_sa_layer3(nn.Module):
     def forward(self, x):
         x1 = self.conv1(x)
         x1 = self.sa(x1)
-        # x1 = self.spool(x1)
+        x1 = self.spool(x1)
         x1 = self.conv2(x1)
         out = self.conv(x)
         out = self.relu(x1+out)
@@ -240,11 +240,11 @@ class SPool(nn.Module):
         out = x_h+x_w
         return out
         
-def get_vgg_sa(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_vgg_sa_spool(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = vgg_sa(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = vgg_sa_spool(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
