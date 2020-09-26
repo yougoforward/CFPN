@@ -67,16 +67,16 @@ class vgg1x1_spool_full_base(nn.Module):
         self.layer2 = vgg1x1_spool_full_layer(64,64,1,1,norm_layer)
         # self.pool = nn.MaxPool2d(2)
         
-        self.layer3 = vgg1x1_spool_full_layer3(64,128,1,1,norm_layer)
-        self.layer4 = vgg1x1_spool_full_layer3(128,128,1,1,norm_layer)
+        self.layer3 = vgg1x1_spool_full_layer3(64,128,1,1,256,256,norm_layer)
+        self.layer4 = vgg1x1_spool_full_layer3(128,128,1,1,256,256,norm_layer)
 
-        self.layer5 = vgg1x1_spool_full_layer3(128,256,1,1,norm_layer)
-        self.layer6 = vgg1x1_spool_full_layer3(256,256,1,1,norm_layer)
-        self.layer7 = vgg1x1_spool_full_layer3(256,256,1,1,norm_layer)
+        self.layer5 = vgg1x1_spool_full_layer3(128,256,1,1,256,256,norm_layer)
+        self.layer6 = vgg1x1_spool_full_layer3(256,256,1,1,256,256,norm_layer)
+        self.layer7 = vgg1x1_spool_full_layer3(256,256,1,1,256,256,norm_layer)
         
-        self.layer8 = vgg1x1_spool_full_layer3(256,512,1,1,norm_layer)
-        self.layer9 = vgg1x1_spool_full_layer3(512,512,1,1,norm_layer)
-        self.layer10 = vgg1x1_spool_full_layer3(512,512,1,1,norm_layer)
+        self.layer8 = vgg1x1_spool_full_layer3(256,512,1,1,256,256,norm_layer)
+        self.layer9 = vgg1x1_spool_full_layer3(512,512,1,1,256,256,norm_layer)
+        self.layer10 = vgg1x1_spool_full_layer3(512,512,1,1,256,256,norm_layer)
         
         self.layer11 = vgg1x1_spool_full_layer3(512,512,1,1,256,256,norm_layer)
         self.layer12 = vgg1x1_spool_full_layer3(512,512,1,1,256,256,norm_layer)
