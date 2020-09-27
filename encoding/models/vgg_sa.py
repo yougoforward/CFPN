@@ -82,10 +82,10 @@ class vgg_sa_base(nn.Module):
         self.layer10 = vgg_sa_layer(512,512,1,1,norm_layer)
         self.layer10_spool = vgg_sa_layer3(512,512,1,1,32,32,norm_layer)
         
-        self.layer11 = vgg_sa_layer(512,512,1,1,256,256,norm_layer)
-        self.layer12 = vgg_sa_layer(512,512,1,1,256,256,norm_layer)
-        self.layer13 = vgg_sa_layer(512,512,1,1,256,256,norm_layer)
-        self.layer13_spool = vgg_sa_layer3(512,512,1,1,16,16,norm_layer)
+        self.layer11 = vgg_spool_layer(512,512,1,1,norm_layer)
+        self.layer12 = vgg_spool_layer(512,512,1,1,norm_layer)
+        self.layer13 = vgg_spool_layer(512,512,1,1,norm_layer)
+        self.layer13_spool = vgg_spool_layer3(512,512,1,1,16,16,norm_layer)
 
     def forward(self, x):
         x1=self.layer1(x)
