@@ -98,7 +98,7 @@ class dfpn84_gsfHead(nn.Module):
         c3_up = F.interpolate(c3, (h,w), **self._up_kwargs)
         satt = self.psaa(torch.cat([c4_up,c3_up,c2], dim=1))
         satt_list = torch.split(satt, 1, 1)
-        out = self.project(torch.cat([p2_1*satt[0],p2_8*satt[1],p3_1*satt[2],p3_8*satt[3],p4_1*satt[4],p4_8*satt[5]], dim=1))
+        out = self.project(torch.cat([p2_1*satt_list[0],p2_8*satt_list[1],p3_1*satt_list[2],p3_8*satt_list[3],p4_1*satt_list[4],p4_8*satt_list[5]], dim=1))
         
 
         #gp
