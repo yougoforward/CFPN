@@ -100,7 +100,7 @@ class cfpnHead(nn.Module):
         sa = self.sa(out2)
         sp = self.spool(out2)
         pa = self.pam(out2)
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp, pam], dim=1))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp, pa], dim=1))
 
         #gp
         gp = self.gap(c4)    
