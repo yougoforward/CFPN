@@ -24,6 +24,7 @@ from .vgg_spool import *
 from .vgg_sa import *
 from .vgg_sa_spool import *
 from .vgg_full import *
+from .vgg_full_dilated import *
 from .vgg1x1 import *
 from .vgg1x1_spool import *
 from .vgg1x1_spool_iter import *
@@ -57,6 +58,7 @@ def get_segmentation_model(name, **kwargs):
         'vgg_sa': get_vgg_sa,
         'vgg_sa_spool': get_vgg_sa_spool,
         'vgg_full': get_vgg_full,
+        'vgg_full_dilated': get_vgg_full_dilated,
         'vgg1x1': get_vgg1x1,
         'vgg1x1_spool': get_vgg1x1_spool,
         'vgg1x1_spool_iter': get_vgg1x1_spool_iter,

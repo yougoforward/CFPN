@@ -66,7 +66,7 @@ class dfpn84_gsfHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.psaa = nn.Sequential(nn.Conv2d(2048+1024+512, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.psaa = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    nn.Conv2d(inter_channels, 6, 1, padding=0, dilation=1, bias=True),
@@ -94,9 +94,7 @@ class dfpn84_gsfHead(nn.Module):
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         
         #psaa
-        c4_up = F.interpolate(c4, (h,w), **self._up_kwargs)
-        c3_up = F.interpolate(c3, (h,w), **self._up_kwargs)
-        satt = self.psaa(torch.cat([c4_up,c3_up,c2], dim=1))
+        satt = self.psaa(out2)
         satt_list = torch.split(satt, 1, 1)
         out = self.project(torch.cat([p2_1*satt_list[0],p2_8*satt_list[1],p3_1*satt_list[2],p3_8*satt_list[3],p4_1*satt_list[4],p4_8*satt_list[5]], dim=1))
         
