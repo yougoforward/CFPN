@@ -92,8 +92,8 @@ class dfpn85_gsfHead(nn.Module):
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         
-        s4 = self.skip(c4)
-        s3 = self.skip(c3)
+        s4 = self.skip4(c4)
+        s3 = self.skip3(c3)
         sp3 = self.s_localUp3(c2, s3)
         sp4 = self.s_localUp4(c2, s4)
         
