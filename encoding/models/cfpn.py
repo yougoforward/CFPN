@@ -96,7 +96,8 @@ class cfpnHead(nn.Module):
         # sa = F.interpolate(sa, (h,w), **self._up_kwargs)
         # sp = F.interpolate(sp, (h,w), **self._up_kwargs)
         # sp = self.spool(out2)
-        sa = self.sa2(self.sa1(out2))
+        # sa = self.sa2(self.sa1(out2))
+        sa = self.sa1(out2)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa], dim=1))
 
         #gp
