@@ -105,13 +105,8 @@ class Context(nn.Module):
         super(Context, self).__init__()
         self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(width), nn.ReLU())
-        # self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
-        #                            norm_layer(width), nn.ReLU())
-        self.dconv1 = nn.Sequential(nn.AvgPool2d(kernel_size= 2*dilation_base+1, padding= dilation_base,
-                                    stride= 1, count_include_pad= False),
-                                    nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(width), nn.ReLU(),
-                                   )
+        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
+                                   norm_layer(width), nn.ReLU())
 
     def forward(self, x):
         feat0 = self.dconv0(x)
@@ -137,11 +132,16 @@ class localUp(nn.Module):
         self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    )
+        self.dconv = nn.Sequential(nn.ConvTranspose2d(out_channels, out_channels, 3, stride=2, padding=2, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU(),
+                                    )
         self.relu = nn.ReLU()
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1p = self.connect(c1) # n, 64, h, w
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        # c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        c2 = self.dconv(c2)
         c2p = self.project(c2)
         out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
