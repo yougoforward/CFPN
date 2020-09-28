@@ -162,8 +162,8 @@ class SA_Module(nn.Module):
         c2 = self.key_dim
         query = self.query_conv(x)
         key = self.key_conv(x)
-        # value = self.project(x)
-        value = x
+        value = self.project(x)
+        # value = x
         
         key_h = query.permute(0,3,1,2)#n,w,c2,h
         key_w = query.permute(0,2,1,3)#n,h,c2,w
