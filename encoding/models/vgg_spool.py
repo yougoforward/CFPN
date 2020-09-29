@@ -155,7 +155,7 @@ class vgg_spool_layer3(nn.Module):
                                    norm_layer(out_planes))
         self.conv1 = nn.Sequential(nn.Conv2d(in_planes, in_planes//4, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(in_planes//4), nn.ReLU())
-        self.conv2 = nn.Sequential(nn.Conv2d(in_planes//4, out_planes, 1, padding=0, dilation=1, bias=False),
+        self.conv2 = nn.Sequential(nn.Conv2d(in_planes//4, out_planes, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_planes))
         self.relu = nn.ReLU()
         
@@ -164,8 +164,8 @@ class vgg_spool_layer3(nn.Module):
         x1 = self.conv1(x)
         x1 = self.spool(x1)
         x1 = self.conv2(x1)
-        out = self.conv(x)
-        out = self.relu(x1+out)
+        # out = self.conv(x)
+        out = self.relu(x1+x)
         return out
 
 class SPool(nn.Module):
