@@ -30,6 +30,8 @@ from .vgg1x1_spool import *
 from .vgg1x1_spool_full import *
 from .fatnet import *
 from .fatnet1 import *
+from .resnet50 import *
+from .resnet50_expand import *
 
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
@@ -63,6 +65,8 @@ def get_segmentation_model(name, **kwargs):
         'vgg1x1_spool_full': get_vgg1x1_spool_full,
         'fatnet': get_fatnet,
         'fatnet1': get_fatnet1,
+        'resnet50': get_resnet50,
+        'resnet50_expand': get_resnet50_expand,
 
 
     }
