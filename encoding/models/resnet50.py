@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from .fcn import FCNHead
 from .base import BaseNet
-from .. import dilated.resnet as resnet
+from ..dilated import resnet as resnet
 
 __all__ = ['resnet50', 'get_resnet50']
 
