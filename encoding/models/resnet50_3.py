@@ -16,7 +16,7 @@ up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 class resnet50_3(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, base_size=520, crop_size=480, mean=[.485, .456, .406],
                  std=[.229, .224, .225], **kwargs):
-        super(resnet50_3, self).__init__(aux)
+        super(resnet50_3, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
         self.mean = mean
         self.std = std
         self.base_size = base_size
