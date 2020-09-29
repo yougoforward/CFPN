@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from torch.nn.parallel.data_parallel import DataParallel
 
 from ..nn import JPU, JPU_X
-import ..dilated.resnet as resnet
+from ..dilated import resnet as resnet
 from ..utils import batch_pix_accuracy, batch_intersection_union
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
