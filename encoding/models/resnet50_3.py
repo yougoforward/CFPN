@@ -6,16 +6,16 @@ import torch.nn.functional as F
 
 from .fcn import FCNHead
 from .base import BaseNet
-from .. import dilated.resnet2 as resnet
+from .. import dilated.resnet3 as resnet
 
-__all__ = ['resnet50_expand', 'get_resnet50_expand']
+__all__ = ['resnet50_3', 'get_resnet50_3']
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
-class resnet50_expand(nn.Module):
+class resnet50_3(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, base_size=520, crop_size=480, mean=[.485, .456, .406],
                  std=[.229, .224, .225], **kwargs):
-        super(resnet50_expand, self).__init__()
+        super(resnet50_3, self).__init__()
         self.mean = mean
         self.std = std
         self.base_size = base_size
@@ -57,11 +57,11 @@ class resnet50_expand(nn.Module):
         return correct, labeled, inter, union
 
 
-def get_resnet50_expand(dataset='pascal_voc', backbone='resnet50_expand', pretrained=False,
+def get_resnet50_3(dataset='pascal_voc', backbone='resnet50_3', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = resnet50_expand(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = resnet50_3(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 

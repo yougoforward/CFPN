@@ -55,59 +55,38 @@ class dfpn85_gsfHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
-        self.s_localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
-        self.s_localUp4=localUp(512, inter_channels, norm_layer, up_kwargs)
-        
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
+
+        self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
-        
+        self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.project3 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels), nn.ReLU())
+        self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
         self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv0 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        self.dconv1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        self.dconv2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=4, dilation=4, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        self.dconv3 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        self.dconv4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=16, dilation=16, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        self.dconv5 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=32, dilation=32, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        
-        
-        self.skip4 = nn.Sequential(nn.Conv2d(2048, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        self.skip3 = nn.Sequential(nn.Conv2d(1024, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
-        
-        
-        
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
+        cat4, p4_1, p4_8=self.context4(c4)
+        p4 = self.project4(cat4)
+                
+        out3 = self.localUp4(c3, p4)
+        cat3, p3_1, p3_8=self.context3(out3)
+        p3 = self.project3(cat3)
         
-        s4 = self.skip4(c4)
-        s3 = self.skip3(c3)
-        sp3 = self.s_localUp3(c2, s3)
-        sp4 = self.s_localUp4(c2, s4)
+        out2 = self.localUp3(c2, p3)
+        cat2, p2_1, p2_8=self.context2(out2)
         
-        p3 = self.localUp4(c3, s4)
-        p2 = self.localUp3(c2, p3)
-        feat = self.project4(torch.cat([p2,sp4], dim=1))
-        
-        f0 = self.dconv0(feat)
-        f1 = self.dconv1(feat)
-        f2 = self.dconv2(feat)
-        f3 = self.dconv3(feat)
-        f4 = self.dconv4(feat)
-        f5 = self.dconv5(feat)
-        out = self.project(torch.cat([f0,f1,f2,f3,f4,f5], dim=1))
+        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
+        p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
+        p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
+        p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
         #gp
         gp = self.gap(c4)    
@@ -138,31 +117,22 @@ class Context(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU())
-        self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU(),
-                                    )
-        self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(out_channels*2, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   )
+                                    )
         self.relu = nn.ReLU()
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
-        c1p = self.connect(c1) # n, 64, h, w
+        c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2p = self.project(c2)
-        out = torch.cat([c1p,c2p], dim=1)
+        out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
-        out = self.project2(out)
-        out = self.relu(c2+out)
+        out = self.relu(c1+out)
         return out
 
 

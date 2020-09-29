@@ -67,12 +67,8 @@ class Bottleneck(nn.Module):
         self.bn1 = norm_layer(planes)
         self.conv2 = nn.Conv2d(
             planes, 4*planes, kernel_size=3, stride=stride,
-            padding=dilation, dilation=dilation, bias=False, groups=planes)
+            padding=dilation, dilation=dilation, bias=False)
         self.bn2 = norm_layer(4*planes)
-        # self.conv22 = nn.Conv2d(
-        #     4*planes, planes, kernel_size=1, stride=1,
-        #     padding=0, dilation=1, bias=False, groups=planes)
-        # self.bn22 = norm_layer(planes)
         
         self.conv3 = nn.Conv2d(
             4*planes, planes * 4, kernel_size=1, bias=False)

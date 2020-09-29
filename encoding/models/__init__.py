@@ -32,8 +32,8 @@ from .vgg1x1_spool_full import *
 from .fatnet import *
 from .fatnet1 import *
 from .resnet50 import *
-from .resnet50_expand import *
-
+from .resnet50_2 import *
+from .resnet50_3 import *
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
     models = {
@@ -68,7 +68,8 @@ def get_segmentation_model(name, **kwargs):
         'fatnet': get_fatnet,
         'fatnet1': get_fatnet1,
         'resnet50': get_resnet50,
-        'resnet50_expand': get_resnet50_expand,
+        'resnet50_2': get_resnet50_2,
+        'resnet50_3': get_resnet50_3,
 
 
     }
