@@ -55,7 +55,7 @@ class dfpn86_gsfHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
-        self.localUp3=localUp2(512, inter_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
         self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
