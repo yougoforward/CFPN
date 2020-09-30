@@ -23,7 +23,7 @@ class resnet50_4(nn.Module):
         self.base_size = base_size
         self.crop_size = crop_size
         self._up_kwargs = up_kwargs
-        self.base = resnet.resnet50_4(pretrained=False, norm_layer=norm_layer)
+        self.base = resnet.resnet50(pretrained=False, norm_layer=norm_layer)
         self.head = FCNHead(2048, nclass, norm_layer)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
