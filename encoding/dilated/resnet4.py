@@ -66,12 +66,11 @@ class Bottleneck(nn.Module):
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = norm_layer(planes)
         self.conv2 = nn.Conv2d(
-            planes, 4*planes, kernel_size=3, stride=stride,
+            planes, planes, kernel_size=3, stride=stride,
             padding=dilation, dilation=dilation, bias=False)
-        self.bn2 = norm_layer(4*planes)
-        
+        self.bn2 = norm_layer(planes)
         self.conv3 = nn.Conv2d(
-            4*planes, planes * 4, kernel_size=1, bias=False)
+            planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = norm_layer(planes * 4)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -133,8 +132,8 @@ class ResNet(nn.Module):
         - Yu, Fisher, and Vladlen Koltun. "Multi-scale context aggregation by dilated convolutions."
     """
     # pylint: disable=unused-variable
-    def __init__(self, block, layers, num_classes=1000, dilated=False,
-                 deep_base=True, norm_layer=nn.BatchNorm2d, output_size=8):
+    def __init__(self, block, layers, num_classes=1000, dilated=True,
+                 deep_base=True, norm_layer=nn.BatchNorm2d, output_size=16):
         self.inplanes = 128 if deep_base else 64
         super(ResNet, self).__init__()
         if deep_base:
