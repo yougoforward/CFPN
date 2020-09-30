@@ -7,21 +7,21 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['vgg1x1_spool', 'get_vgg1x1_spool']
+__all__ = ['vgg1x1_spool2', 'get_vgg1x1_spool2']
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
-class vgg1x1_spool(nn.Module):
+class vgg1x1_spool2(nn.Module):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, base_size=520, crop_size=480, mean=[.485, .456, .406],
                  std=[.229, .224, .225], **kwargs):
-        super(vgg1x1_spool, self).__init__()
+        super(vgg1x1_spool2, self).__init__()
         self.mean = mean
         self.std = std
         self.base_size = base_size
         self.crop_size = crop_size
         self._up_kwargs = up_kwargs
-        self.base = vgg1x1_spool_base(norm_layer)
-        self.head = vgg1x1_spoolHead(512, nclass, norm_layer, up_kwargs=self._up_kwargs)
+        self.base = vgg1x1_spool2_base(norm_layer)
+        self.head = vgg1x1_spool2Head(512, nclass, norm_layer, up_kwargs=self._up_kwargs)
 
     def forward(self, x):
         imsize = x.size()[2:]
@@ -43,9 +43,9 @@ class vgg1x1_spool(nn.Module):
 
 
 
-class vgg1x1_spoolHead(nn.Module):
+class vgg1x1_spool2Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs=None):
-        super(vgg1x1_spoolHead, self).__init__()
+        super(vgg1x1_spool2Head, self).__init__()
         self._up_kwargs = up_kwargs
 
         inter_channels = 512
@@ -60,30 +60,30 @@ class vgg1x1_spoolHead(nn.Module):
         out = self.conv5(x)
         return self.conv6(out)
 
-class vgg1x1_spool_base(nn.Module):
+class vgg1x1_spool2_base(nn.Module):
     def __init__(self, norm_layer=nn.BatchNorm2d):
-        super(vgg1x1_spool_base, self).__init__()
-        self.layer1 = vgg1x1_spool_layer(3,64,1,1,norm_layer)
-        self.layer2 = vgg1x1_spool_layer(64,64,1,1,norm_layer)
+        super(vgg1x1_spool2_base, self).__init__()
+        self.layer1 = vgg1x1_spool2_layer(3,64,1,1,norm_layer)
+        self.layer2 = vgg1x1_spool2_layer(64,64,1,1,norm_layer)
         # self.pool = nn.MaxPool2d(2)
         
-        # self.layer3 = vgg1x1_spool_layer2(64,128,1,1,norm_layer)
-        # self.layer4 = vgg1x1_spool_layer2(128,128,1,1,norm_layer)
+        # self.layer3 = vgg1x1_spool2_layer2(64,128,1,1,norm_layer)
+        # self.layer4 = vgg1x1_spool2_layer2(128,128,1,1,norm_layer)
 
-        # self.layer5 = vgg1x1_spool_layer2(128,256,1,1,norm_layer)
-        # self.layer6 = vgg1x1_spool_layer2(256,256,1,1,norm_layer)
-        # self.layer7 = vgg1x1_spool_layer2(256,256,1,1,norm_layer)
+        # self.layer5 = vgg1x1_spool2_layer2(128,256,1,1,norm_layer)
+        # self.layer6 = vgg1x1_spool2_layer2(256,256,1,1,norm_layer)
+        # self.layer7 = vgg1x1_spool2_layer2(256,256,1,1,norm_layer)
         
-        # self.layer8 = vgg1x1_spool_layer2(256,512,1,1,norm_layer)
-        # self.layer9 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
-        # self.layer10 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
+        # self.layer8 = vgg1x1_spool2_layer2(256,512,1,1,norm_layer)
+        # self.layer9 = vgg1x1_spool2_layer2(512,512,1,1,norm_layer)
+        # self.layer10 = vgg1x1_spool2_layer2(512,512,1,1,norm_layer)
         
-        # self.layer11 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
-        # self.layer12 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
-        # self.layer13 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
-        self.layer11 = vgg1x1_spool_layer4(64,512,1,1,256,256,norm_layer)
-        self.layer12 = vgg1x1_spool_layer4(512,512,1,1,256,256,norm_layer)
-        self.layer13 = vgg1x1_spool_layer4(512,512,1,1,256,256,norm_layer)
+        # self.layer11 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
+        # self.layer12 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
+        # self.layer13 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
+        self.layer11 = vgg1x1_spool2_layer4(64,512,1,1,256,256,norm_layer)
+        self.layer12 = vgg1x1_spool2_layer4(512,512,1,1,256,256,norm_layer)
+        self.layer13 = vgg1x1_spool2_layer4(512,512,1,1,256,256,norm_layer)
 
     def forward(self, x):
         x1=self.layer1(x)
@@ -115,9 +115,9 @@ class vgg1x1_spool_base(nn.Module):
 
 
 
-class vgg1x1_spool_layer(nn.Module):
+class vgg1x1_spool2_layer(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, norm_layer=nn.BatchNorm2d):
-        super(vgg1x1_spool_layer, self).__init__()
+        super(vgg1x1_spool2_layer, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
@@ -128,9 +128,9 @@ class vgg1x1_spool_layer(nn.Module):
         out = self.conv(x)
         return out
     
-class vgg1x1_spool_layer2(nn.Module):
+class vgg1x1_spool2_layer2(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, norm_layer=nn.BatchNorm2d):
-        super(vgg1x1_spool_layer2, self).__init__()
+        super(vgg1x1_spool2_layer2, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
@@ -141,9 +141,9 @@ class vgg1x1_spool_layer2(nn.Module):
         out = self.conv(x)
         return out
 
-class vgg1x1_spool_layer3(nn.Module):
+class vgg1x1_spool2_layer3(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, weight=256, norm_layer=nn.BatchNorm2d):
-        super(vgg1x1_spool_layer3, self).__init__()
+        super(vgg1x1_spool2_layer3, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
@@ -165,9 +165,9 @@ class vgg1x1_spool_layer3(nn.Module):
         out = self.relu(x1+out)
         return out
 
-class vgg1x1_spool_layer4(nn.Module):
+class vgg1x1_spool2_layer4(nn.Module):
     def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, weight=256, norm_layer=nn.BatchNorm2d):
-        super(vgg1x1_spool_layer4, self).__init__()
+        super(vgg1x1_spool2_layer4, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
@@ -181,12 +181,33 @@ class vgg1x1_spool_layer4(nn.Module):
         out = self.conv(x1)
         return out
     
+# class SPool(nn.Module):
+#     def __init__(self, height, width, norm_layer):
+#         super(SPool, self).__init__()
+#         self.conv_h = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
+#         self.conv_w = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
+
+#     def forward(self, x):
+#         n,c,h,w = x.size()
+#         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
+#         x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
+        
+#         x_h = self.conv_h(x_h)
+#         x_w = self.conv_w(x_w)
+        
+#         x_h = x_h.permute(0,2,1,3)
+#         x_w = x_w.permute(0,2,3,1)
+        
+#         out = x_h+x_w
+#         return out
+
 class SPool(nn.Module):
     def __init__(self, height, width, norm_layer):
         super(SPool, self).__init__()
         self.conv_h = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
         self.conv_w = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
-
+        self.conv_h2 = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
+        self.conv_w2 = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
     def forward(self, x):
         n,c,h,w = x.size()
         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
@@ -195,17 +216,20 @@ class SPool(nn.Module):
         x_h = self.conv_h(x_h)
         x_w = self.conv_w(x_w)
         
-        x_h = x_h.permute(0,2,1,3)
-        x_w = x_w.permute(0,2,3,1)
+        x_h = x_w.permute(0,3,2,1)#n,h,c,w
+        x_w = x_h.permute(0,3,2,1)#n,w,c,h
+        
+        x_h = self.conv_h2(x_h)
+        x_w = self.conv_w2(x_w)
         
         out = x_h+x_w
         return out
-        
-def get_vgg1x1_spool(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+       
+def get_vgg1x1_spool2(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = vgg1x1_spool(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = vgg1x1_spool2(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
