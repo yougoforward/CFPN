@@ -67,42 +67,48 @@ class vgg1x1_spool_base(nn.Module):
         self.layer2 = vgg1x1_spool_layer(64,64,1,1,norm_layer)
         # self.pool = nn.MaxPool2d(2)
         
-        self.layer3 = vgg1x1_spool_layer2(64,128,1,1,norm_layer)
-        self.layer4 = vgg1x1_spool_layer2(128,128,1,1,norm_layer)
+        # self.layer3 = vgg1x1_spool_layer2(64,128,1,1,norm_layer)
+        # self.layer4 = vgg1x1_spool_layer2(128,128,1,1,norm_layer)
 
-        self.layer5 = vgg1x1_spool_layer2(128,256,1,1,norm_layer)
-        self.layer6 = vgg1x1_spool_layer2(256,256,1,1,norm_layer)
-        self.layer7 = vgg1x1_spool_layer2(256,256,1,1,norm_layer)
+        # self.layer5 = vgg1x1_spool_layer2(128,256,1,1,norm_layer)
+        # self.layer6 = vgg1x1_spool_layer2(256,256,1,1,norm_layer)
+        # self.layer7 = vgg1x1_spool_layer2(256,256,1,1,norm_layer)
         
-        self.layer8 = vgg1x1_spool_layer2(256,512,1,1,norm_layer)
-        self.layer9 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
-        self.layer10 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
+        # self.layer8 = vgg1x1_spool_layer2(256,512,1,1,norm_layer)
+        # self.layer9 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
+        # self.layer10 = vgg1x1_spool_layer2(512,512,1,1,norm_layer)
         
-        self.layer11 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
-        self.layer12 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
-        self.layer13 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
-
+        # self.layer11 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
+        # self.layer12 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
+        # self.layer13 = vgg1x1_spool_layer3(512,512,1,1,256,256,norm_layer)
+        self.layer11 = vgg1x1_spool_layer4(64,512,1,1,256,256,norm_layer)
+        self.layer12 = vgg1x1_spool_layer4(512,512,1,1,256,256,norm_layer)
+        self.layer13 = vgg1x1_spool_layer4(512,512,1,1,256,256,norm_layer)
 
     def forward(self, x):
         x1=self.layer1(x)
         x2=self.layer2(x1)
         # x_pool1=self.pool(x2)
         
-        x3=self.layer3(x2)
-        x4=self.layer4(x3)
-        # x_pool2=self.pool(x4)
+        # x3=self.layer3(x2)
+        # x4=self.layer4(x3)
+        # # x_pool2=self.pool(x4)
         
-        x5=self.layer5(x4)
-        x6=self.layer6(x5)
-        x7=self.layer7(x6)
-        # x_pool3=self.pool(x7)
+        # x5=self.layer5(x4)
+        # x6=self.layer6(x5)
+        # x7=self.layer7(x6)
+        # # x_pool3=self.pool(x7)
         
-        x8=self.layer8(x7)
-        x9=self.layer9(x8)
-        x10=self.layer10(x9)
-        # x_pool4=self.pool(x10)
+        # x8=self.layer8(x7)
+        # x9=self.layer9(x8)
+        # x10=self.layer10(x9)
+        # # x_pool4=self.pool(x10)
         
-        x11=self.layer11(x10)
+        # x11=self.layer11(x10)
+        # x12=self.layer12(x11)
+        # x13=self.layer13(x12)
+        
+        x11=self.layer11(x2)
         x12=self.layer12(x11)
         x13=self.layer13(x12)
         return x13
@@ -159,6 +165,22 @@ class vgg1x1_spool_layer3(nn.Module):
         out = self.relu(x1+out)
         return out
 
+class vgg1x1_spool_layer4(nn.Module):
+    def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, weight=256, norm_layer=nn.BatchNorm2d):
+        super(vgg1x1_spool_layer4, self).__init__()
+        self.tl_size = tl_size
+        self.inplanes = in_planes
+        self.outplanes = out_planes
+        self.spool = SPool(height, weight, norm_layer)
+        self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_planes),nn.ReLU())
+        
+
+    def forward(self, x):
+        x1 = self.spool(x)
+        out = self.conv(x1)
+        return out
+    
 class SPool(nn.Module):
     def __init__(self, height, width, norm_layer):
         super(SPool, self).__init__()
