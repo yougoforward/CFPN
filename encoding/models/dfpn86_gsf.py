@@ -132,7 +132,7 @@ class localUp(nn.Module):
         self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    )
-        self.dconv = nn.Sequential(nn.ConvTranspose2d(out_channels, out_channels, 3, stride=2, padding=1, output_padding=1, dilation=1, bias=False),
+        self.dconv = nn.Sequential(nn.ConvTranspose2d(out_channels, out_channels, 3, stride=2, padding=1, output_padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU(),
                                     )
