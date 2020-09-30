@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['vgg1x1_spoolbnrelubnrelu', 'get_vgg1x1_spoolbnrelu']
+__all__ = ['vgg1x1_spoolbnrelu', 'get_vgg1x1_spoolbnrelu']
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
