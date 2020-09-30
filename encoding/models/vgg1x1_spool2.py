@@ -223,7 +223,7 @@ class SPool(nn.Module):
         x_w = self.conv_w2(x_w)
         
         x_h = x_h.permute(0,2,1,3)
-        x_w = x_h.permute(0,2,3,1)
+        x_w = x_w.permute(0,2,3,1)
         out = x_h+x_w
         return out
        
