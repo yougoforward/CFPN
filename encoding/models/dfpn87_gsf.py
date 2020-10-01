@@ -142,7 +142,7 @@ class localUp(nn.Module):
         out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
         out = self.project2(out)
-        out = self.relu(c2+out)
+        out = self.relu(c1p+out)
         return out
 
 
