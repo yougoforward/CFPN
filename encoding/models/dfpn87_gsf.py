@@ -8,7 +8,7 @@ from .fcn import FCNHead
 from .base import BaseNet
 
 __all__ = ['dfpn87_gsf', 'get_dfpn87_gsf']
-up_kwargs = {'mode': 'nearest', 'align_corners': False}
+up_kwargs = {'mode': 'nearest'}
 
 class dfpn87_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
