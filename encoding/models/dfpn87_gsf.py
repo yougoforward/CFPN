@@ -8,10 +8,12 @@ from .fcn import FCNHead
 from .base import BaseNet
 
 __all__ = ['dfpn87_gsf', 'get_dfpn87_gsf']
+up_kwargs = {'mode': 'nearest', 'align_corners': False}
 
 class dfpn87_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
         super(dfpn87_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        self._up_kwargs = up_kwargs
 
         self.head = dfpn87_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
@@ -140,7 +142,7 @@ class localUp(nn.Module):
         out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
         out = self.project2(out)
-        out = self.relu(c1p+out)
+        out = self.relu(c2+out)
         return out
 
 
