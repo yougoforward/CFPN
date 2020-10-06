@@ -8,12 +8,10 @@ from .fcn import FCNHead
 from .base import BaseNet
 
 __all__ = ['dfpn87_gsf', 'get_dfpn87_gsf']
-up_kwargs = {'mode': 'nearest'}
 
 class dfpn87_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
         super(dfpn87_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
-        self._up_kwargs = up_kwargs
 
         self.head = dfpn87_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
@@ -121,6 +119,9 @@ class localUp(nn.Module):
         self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
+        self.connect1 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels)
+                                   )
         self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU())
@@ -142,7 +143,7 @@ class localUp(nn.Module):
         out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
         out = self.project2(out)
-        out = self.relu(c2+out)
+        out = self.relu(c2+out+self.connect1(c1p))
         return out
 
 
