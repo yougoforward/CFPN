@@ -130,7 +130,7 @@ class vgg1x1_pool_layer2(nn.Module):
         self.outplanes = out_planes
         self.pool =nn.AvgPool2d(tl_size,1,(tl_size-1)//2)
         self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_planes*tl_size*tl_size), nn.ReLU())
+                                   norm_layer(out_planes), nn.ReLU())
 
     def forward(self, x):
         x = self.pool(x)
