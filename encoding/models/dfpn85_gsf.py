@@ -20,10 +20,10 @@ class dfpn85_gsf(BaseNet):
         
         if se_loss:
             self.secls = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(2048, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
+                            nn.Conv2d(2048, 512, 1, bias=False),
+                            norm_layer(512),
                             nn.ReLU(True),
-                            nn.Conv2d(inter_channels, nclass, 1, bias=True))
+                            nn.Conv2d(512, nclass, 1, bias=True))
 
     def forward(self, x):
         imsize = x.size()[2:]
