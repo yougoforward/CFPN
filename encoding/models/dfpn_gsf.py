@@ -125,15 +125,11 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        self.refine1 = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 3, padding=1, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU(),
                                     )
-        self.refine2= nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 3, padding=2, dilation=2, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU(),
-                                    )
-        self.project2 = nn.Sequential(nn.Conv2d(out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    )
         self.relu = nn.ReLU()
@@ -143,10 +139,7 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2p = self.project(c2)
         out = torch.cat([c1p,c2p], dim=1)
-        out1 = self.refine1(out)
-        out2 = self.refine2(out)
-        out = torch.cat([out1, out2], dim=1)
-        # out = out1+out2
+        out = self.refine(out)
         out = self.project2(out)
         out = self.relu(c2+out)
         return out
