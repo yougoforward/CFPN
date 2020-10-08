@@ -93,7 +93,7 @@ class dfpn_gsfHead(nn.Module):
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.gff(out)
+        out = self.gff(out, c1)
 
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
@@ -170,9 +170,17 @@ class PAM_Module(nn.Module):
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
+        
+        self.skip = nn.Sequential(nn.Conv2d(256, 48, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(48),
+                                   nn.ReLU()
+                                   )
+        self.refine = nn.Sequential(nn.Conv2d(in_dim+48, in_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_dim),
+                                   nn.ReLU()
+                                   )
 
-
-    def forward(self, x):
+    def forward(self, x, xl):
         """
             inputs :
                 x : input feature maps( B X C X H X W)
@@ -191,8 +199,11 @@ class PAM_Module(nn.Module):
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
-
+        _,_,hl,wl = xl.size()
+        x_skip = self.skip(xl)
+        x = self.refine(torch.cat([x_skip, F.inter(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
         gamma = self.gamma(x)
+        out = F.interpolate(out, (hl,wl), mode='bilinear', align_corners=True)
         out = (1-gamma)*out + gamma*x
         return out
 
