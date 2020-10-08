@@ -201,7 +201,7 @@ class PAM_Module(nn.Module):
         out = out.view(m_batchsize, C, height, width)
         _,_,hl,wl = xl.size()
         x_skip = self.skip(xl)
-        x = self.refine(torch.cat([x_skip, F.inter(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
+        x = self.refine(torch.cat([x_skip, F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
         gamma = self.gamma(x)
         out = F.interpolate(out, (hl,wl), mode='bilinear', align_corners=True)
         out = (1-gamma)*out + gamma*x
