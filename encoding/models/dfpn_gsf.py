@@ -162,7 +162,7 @@ class PAM_Module(nn.Module):
     def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
-        self.pool = nn.MaxPool2d(kernel_size=4)
+        self.pool = nn.MaxPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
@@ -188,9 +188,9 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        _,_,hl,wl = xl.size()
-        x_skip = self.skip(xl)
-        x = self.refine(torch.cat([x_skip, F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
+        # _,_,hl,wl = xl.size()
+        # x_skip = self.skip(xl)
+        # x = self.refine(torch.cat([x_skip, F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
         
         xp = self.pool(x)
         m_batchsize, C, height, width = x.size()
@@ -203,8 +203,12 @@ class PAM_Module(nn.Module):
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
-
+        _,_,hl,wl = xl.size()
+        x_skip = self.skip(xl)
+        xup=F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)
+        x = self.refine(torch.cat([x_skip, xup], dim=1))
         gamma = self.gamma(x)
-        out = (1-gamma)*out + gamma*x
+        out=F.interpolate(out, (hl,wl), mode='bilinear', align_corners=True)
+        out = (1-gamma)*out + gamma*xup
         return out
 
