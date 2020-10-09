@@ -162,7 +162,7 @@ class PAM_Module(nn.Module):
     def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
-        self.pool = nn.MaxPool2d(kernel_size=2)
+        self.pool = nn.MaxPool2d(kernel_size=4)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
