@@ -50,11 +50,11 @@ class dfpn8_gsfHead(nn.Module):
                             norm_layer(inter_channels),
                             nn.ReLU(True))
         self.gap2 = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
+                            nn.Conv2d(in_channels, in_channels//16, 1, bias=False),
+                            norm_layer(in_channels//16),
                             nn.ReLU(True))
         self.se2 = nn.Sequential(
-                            nn.Conv2d(inter_channels, in_channels, 1, bias=True),
+                            nn.Conv2d(in_channels//16, in_channels, 1, bias=True),
                             nn.Sigmoid())
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
