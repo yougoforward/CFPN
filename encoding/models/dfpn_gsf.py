@@ -188,6 +188,10 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
+        _,_,hl,wl = xl.size()
+        x_skip = self.skip(xl)
+        x = self.refine(torch.cat([x_skip, F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
+        
         xp = self.pool(x)
         m_batchsize, C, height, width = x.size()
         m_batchsize, C, hp, wp = xp.size()
@@ -199,11 +203,8 @@ class PAM_Module(nn.Module):
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
-        _,_,hl,wl = xl.size()
-        x_skip = self.skip(xl)
-        x = self.refine(torch.cat([x_skip, F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
+
         gamma = self.gamma(x)
-        out = F.interpolate(out, (hl,wl), mode='bilinear', align_corners=True)
         out = (1-gamma)*out + gamma*x
         return out
 
