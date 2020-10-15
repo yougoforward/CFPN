@@ -157,7 +157,7 @@ class vgg_spool_layer3(nn.Module):
     def forward(self, x):
         # x1 = self.conv1(x)
         x1 = self.spool(x)
-        x1 = self.conv2(x1)
+        out = self.conv2(x1)
         # out = self.conv(x)
         # out = self.relu(x1+x)
         return out
