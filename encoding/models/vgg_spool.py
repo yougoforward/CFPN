@@ -91,29 +91,29 @@ class vgg_spool_base(nn.Module):
         x1=self.layer1(x)
         x2=self.layer2(x1)
         x2=self.layer2_spool(x2)
-        x2=self.pool(x2)
+        # x2=self.pool(x2)
         
         x3=self.layer3(x2)
         x4=self.layer4(x3)
         x4=self.layer4_spool(x4)
-        x4=self.pool(x4)
+        # x4=self.pool(x4)
         
         x5=self.layer5(x4)
         x6=self.layer6(x5)
         x7=self.layer7(x6)
         x7=self.layer7_spool(x7)
-        x7=self.pool(x7)
+        # x7=self.pool(x7)
         
         x8=self.layer8(x7)
         x9=self.layer9(x8)
         x10=self.layer10(x9)
         x10=self.layer10_spool(x10)
-        x10=self.pool(x10)
+        # x10=self.pool(x10)
         
         x11=self.layer11(x10)
         x12=self.layer12(x11)
         x13=self.layer13(x12)
-        x13=self.layer13_spool(x13)
+        # x13=self.layer13_spool(x13)
         return x13
 
 
@@ -171,8 +171,8 @@ class vgg_spool_layer3(nn.Module):
 class SPool(nn.Module):
     def __init__(self, height, width, norm_layer):
         super(SPool, self).__init__()
-        self.conv_h = nn.Sequential(nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False))
-        self.conv_w = nn.Sequential(nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False))
+        self.conv_h = nn.Sequential(nn.Conv2d(height, height//2, 1, padding=0, dilation=1, bias=False))
+        self.conv_w = nn.Sequential(nn.Conv2d(width, width//2, 1, padding=0, dilation=1, bias=False))
 
     def forward(self, x):
         n,c,h,w = x.size()
