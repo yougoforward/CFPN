@@ -171,15 +171,14 @@ class SPool(nn.Module):
     def forward(self, x):
         n,c,h,w = x.size()
         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
-        x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
-        
         x_h = self.conv_h(x_h)
+        # x_h = x_h.permute(0,2,1,3)
+        # x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
+        x_w = x_h.permute(0,3,2,1)
         x_w = self.conv_w(x_w)
+        out = x_w.permute(0,2,3,1)
         
-        x_h = x_h.permute(0,2,1,3)
-        x_w = x_w.permute(0,2,3,1)
-        
-        out = x_h+x_w
+        # out = x_h+x_w
         return out
         
 def get_vgg_spool(dataset='pascal_voc', backbone='resnet50', pretrained=False,
