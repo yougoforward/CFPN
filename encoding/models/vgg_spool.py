@@ -90,24 +90,24 @@ class vgg_spool_base(nn.Module):
     def forward(self, x):
         x1=self.layer1(x)
         x2=self.layer2(x1)
-        x2=self.layer2_spool(x2)
+        x2=self.layer2_spool(x2)+self.pool(x2)
         # x2=self.pool(x2)
         
         x3=self.layer3(x2)
         x4=self.layer4(x3)
-        x4=self.layer4_spool(x4)
+        x4=self.layer4_spool(x4)+self.pool(x4)
         # x4=self.pool(x4)
         
         x5=self.layer5(x4)
         x6=self.layer6(x5)
         x7=self.layer7(x6)
-        x7=self.layer7_spool(x7)
+        x7=self.layer7_spool(x7)+self.pool(x7)
         # x7=self.pool(x7)
         
         x8=self.layer8(x7)
         x9=self.layer9(x8)
         x10=self.layer10(x9)
-        x10=self.layer10_spool(x10)
+        x10=self.layer10_spool(x10)+self.pool(x10)
         # x10=self.pool(x10)
         
         x11=self.layer11(x10)
