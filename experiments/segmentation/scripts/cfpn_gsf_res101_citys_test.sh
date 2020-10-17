@@ -1,6 +1,6 @@
 # !/usr/bin/env bash
 # train
-python -m experiments.segmentation.train --dataset citys  --split trainval \
+python -m experiments.segmentation.train --dataset citys  --train-split trainval \
     --model cfpn_gsf --aux --base-size 1024 --crop-size 769 \
     --backbone resnet101 --checkname cfpn_gsf_res101_citys_test --batch-size 8 --lr 0.002 --epochs 300
 
