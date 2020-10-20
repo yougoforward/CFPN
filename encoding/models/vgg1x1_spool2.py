@@ -48,7 +48,7 @@ class vgg1x1_spool2Head(nn.Module):
         super(vgg1x1_spool2Head, self).__init__()
         self._up_kwargs = up_kwargs
 
-        inter_channels = 512
+        inter_channels = 256
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
@@ -81,9 +81,9 @@ class vgg1x1_spool2_base(nn.Module):
         # self.layer11 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
         # self.layer12 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
         # self.layer13 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
-        self.layer11 = vgg1x1_spool2_layer4(64,512,1,1,256,256,norm_layer)
-        self.layer12 = vgg1x1_spool2_layer4(512,512,1,1,256,256,norm_layer)
-        self.layer13 = vgg1x1_spool2_layer4(512,512,1,1,256,256,norm_layer)
+        self.layer11 = vgg1x1_spool2_layer4(64,128,1,1,256,256,norm_layer)
+        self.layer12 = vgg1x1_spool2_layer4(128,256,1,1,256,256,norm_layer)
+        self.layer13 = vgg1x1_spool2_layer4(256,512,1,1,256,256,norm_layer)
 
     def forward(self, x):
         x1=self.layer1(x)
