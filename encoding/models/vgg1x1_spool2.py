@@ -142,12 +142,12 @@ class vgg1x1_spool2_layer2(nn.Module):
         return out
 
 class vgg1x1_spool2_layer3(nn.Module):
-    def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, weight=256, norm_layer=nn.BatchNorm2d):
+    def __init__(self, in_planes, out_planes, dilation=1, tl_size=1, height=256, width=256, norm_layer=nn.BatchNorm2d):
         super(vgg1x1_spool2_layer3, self).__init__()
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
-        # self.spool = SPool(height, weight, norm_layer)
+        # self.spool = SPool(height, width, norm_layer)
         self.spool = SPool_depthwise(out_planes//4, height, width, norm_layer)
         self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_planes))
