@@ -204,12 +204,12 @@ class SPool(nn.Module):
 class SPool_depthwise(nn.Module):
     def __init__(self, in_channels, height, width, norm_layer):
         super(SPool_depthwise, self).__init__()
-        spool_dw = nn.ModuleList([SPool(height,width,norm_layer) for i in range(in_channels)])
+        self.spool_dw = nn.ModuleList([SPool(height,width,norm_layer) for i in range(in_channels)])
 
     def forward(self, x):
         n,c,h,w = x.size()
         x_dw = torch.split(x,1,1)
-        x_dw_spool = [spool_dw(x_dw[i]) for i in range(c)]
+        x_dw_spool = [self.spool_dw(x_dw[i]) for i in range(c)]
         out = torch.cat(x_dw_spool, 1)
         return out
 # class SPool(nn.Module):
