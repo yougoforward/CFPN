@@ -204,7 +204,7 @@ class SPool(nn.Module):
 class SPool_depthwise(nn.Module):
     def __init__(self, in_channels, height, width, norm_layer):
         super(SPool_depthwise, self).__init__()
-        spool_dw = nn.ModuleList([SPool(height,weight,norm_layer) for i in range(in_channels)])
+        spool_dw = nn.ModuleList([SPool(height,width,norm_layer) for i in range(in_channels)])
 
     def forward(self, x):
         n,c,h,w = x.size()
