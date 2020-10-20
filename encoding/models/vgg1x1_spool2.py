@@ -81,9 +81,9 @@ class vgg1x1_spool2_base(nn.Module):
         # self.layer11 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
         # self.layer12 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
         # self.layer13 = vgg1x1_spool2_layer3(512,512,1,1,256,256,norm_layer)
-        self.layer11 = vgg1x1_spool2_layer4(64,128,1,1,256,256,norm_layer)
-        self.layer12 = vgg1x1_spool2_layer4(128,256,1,1,256,256,norm_layer)
-        self.layer13 = vgg1x1_spool2_layer4(256,512,1,1,256,256,norm_layer)
+        self.layer11 = vgg1x1_spool2_layer3(64,128,1,1,256,256,norm_layer)
+        self.layer12 = vgg1x1_spool2_layer3(128,256,1,1,256,256,norm_layer)
+        self.layer13 = vgg1x1_spool2_layer3(256,512,1,1,256,256,norm_layer)
 
     def forward(self, x):
         x1=self.layer1(x)
@@ -150,9 +150,9 @@ class vgg1x1_spool2_layer3(nn.Module):
         self.spool = SPool(height, weight, norm_layer)
         self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_planes))
-        self.conv1 = nn.Sequential(nn.Conv2d(in_planes, in_planes//4, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_planes//4), nn.ReLU())
-        self.conv2 = nn.Sequential(nn.Conv2d(in_planes//4, out_planes, 1, padding=0, dilation=1, bias=False),
+        self.conv1 = nn.Sequential(nn.Conv2d(in_planes, out_planes//4, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_planes//4), nn.ReLU())
+        self.conv2 = nn.Sequential(nn.Conv2d(out_planes//4, out_planes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_planes))
         self.relu = nn.ReLU()
         
@@ -181,33 +181,12 @@ class vgg1x1_spool2_layer4(nn.Module):
         out = self.conv(x1)
         return out
     
-# class SPool(nn.Module):
-#     def __init__(self, height, width, norm_layer):
-#         super(SPool, self).__init__()
-#         self.conv_h = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
-#         self.conv_w = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
-
-#     def forward(self, x):
-#         n,c,h,w = x.size()
-#         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
-#         x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
-        
-#         x_h = self.conv_h(x_h)
-#         x_w = self.conv_w(x_w)
-        
-#         x_h = x_h.permute(0,2,1,3)
-#         x_w = x_w.permute(0,2,3,1)
-        
-#         out = x_h+x_w
-#         return out
-
 class SPool(nn.Module):
     def __init__(self, height, width, norm_layer):
         super(SPool, self).__init__()
         self.conv_h = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
         self.conv_w = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
-        self.conv_h2 = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
-        self.conv_w2 = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
+
     def forward(self, x):
         n,c,h,w = x.size()
         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
@@ -216,16 +195,37 @@ class SPool(nn.Module):
         x_h = self.conv_h(x_h)
         x_w = self.conv_w(x_w)
         
-        x_h = x_w.permute(0,3,2,1)#n,h,c,w
-        x_w = x_h.permute(0,3,2,1)#n,w,c,h
-        
-        x_h = self.conv_h2(x_h)
-        x_w = self.conv_w2(x_w)
-        
         x_h = x_h.permute(0,2,1,3)
         x_w = x_w.permute(0,2,3,1)
+        
         out = x_h+x_w
         return out
+
+# class SPool(nn.Module):
+#     def __init__(self, height, width, norm_layer):
+#         super(SPool, self).__init__()
+#         self.conv_h = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
+#         self.conv_w = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
+#         self.conv_h2 = nn.Conv2d(height, height, 1, padding=0, dilation=1, bias=False)
+#         self.conv_w2 = nn.Conv2d(width, width, 1, padding=0, dilation=1, bias=False)
+#     def forward(self, x):
+#         n,c,h,w = x.size()
+#         x_h = x.permute(0,2,1,3).contiguous()#n,h,c,w
+#         x_w = x.permute(0,3,1,2).contiguous()#n,w,c,h
+        
+#         x_h = self.conv_h(x_h)
+#         x_w = self.conv_w(x_w)
+        
+#         x_h = x_w.permute(0,3,2,1)#n,h,c,w
+#         x_w = x_h.permute(0,3,2,1)#n,w,c,h
+        
+#         x_h = self.conv_h2(x_h)
+#         x_w = self.conv_w2(x_w)
+        
+#         x_h = x_h.permute(0,2,1,3)
+#         x_w = x_w.permute(0,2,3,1)
+#         out = x_h+x_w
+#         return out
        
 def get_vgg1x1_spool2(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
