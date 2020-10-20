@@ -147,8 +147,8 @@ class vgg1x1_spool2_layer3(nn.Module):
         self.tl_size = tl_size
         self.inplanes = in_planes
         self.outplanes = out_planes
-        self.spool = SPool(height, weight, norm_layer)
-        # self.spool = SPool_depthwise(out_planes//4, height, width, norm_layer)
+        # self.spool = SPool(height, weight, norm_layer)
+        self.spool = SPool_depthwise(out_planes//4, height, width, norm_layer)
         self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_planes))
         self.conv1 = nn.Sequential(nn.Conv2d(in_planes, out_planes//4, 1, padding=0, dilation=1, bias=False),
