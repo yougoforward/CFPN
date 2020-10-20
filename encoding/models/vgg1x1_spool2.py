@@ -148,6 +148,7 @@ class vgg1x1_spool2_layer3(nn.Module):
         self.inplanes = in_planes
         self.outplanes = out_planes
         self.spool = SPool(height, weight, norm_layer)
+        # self.spool = SPool_depthwise(out_planes//4, height, width, norm_layer)
         self.conv = nn.Sequential(nn.Conv2d(in_planes, out_planes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_planes))
         self.conv1 = nn.Sequential(nn.Conv2d(in_planes, out_planes//4, 1, padding=0, dilation=1, bias=False),
@@ -200,7 +201,17 @@ class SPool(nn.Module):
         
         out = x_h+x_w
         return out
+class SPool_depthwise(nn.Module):
+    def __init__(self, in_channels, height, width, norm_layer):
+        super(SPool_depthwise, self).__init__()
+        spool_dw = nn.ModuleList([SPool(height,weight,norm_layer) for i in range(in_channels)])
 
+    def forward(self, x):
+        n,c,h,w = x.size()
+        x_dw = torch.split(x,1,1)
+        x_dw_spool = [spool_dw(x_dw[i]) for i in range(c)]
+        out = torch.cat(x_dw_spool, 1)
+        return out
 # class SPool(nn.Module):
 #     def __init__(self, height, width, norm_layer):
 #         super(SPool, self).__init__()
