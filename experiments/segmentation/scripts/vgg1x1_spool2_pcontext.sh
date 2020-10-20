@@ -2,7 +2,7 @@
 # train
 python -m experiments.segmentation.train_scratch --dataset pcontext \
     --model vgg1x1_spool2 --base-size 256 --crop-size 256 \
-    --checkname vgg1x1_spool2_pcontext --epochs 150
+    --checkname vgg1x1_spool2_pcontext --epochs 80
 
 #test [single-scale]
 python -m experiments.segmentation.test --dataset pcontext \
