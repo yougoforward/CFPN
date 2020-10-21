@@ -101,7 +101,7 @@ class dfpn84_gsfHead(nn.Module):
         out = self.gff(out)
         #
         # out = torch.cat([out, gp.expand_as(out)], dim=1)
-        out = out+self.gap2(gp)
+        out = out+gp
         return self.conv6(out)
 
 class Context(nn.Module):
