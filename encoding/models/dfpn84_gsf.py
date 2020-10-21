@@ -48,17 +48,17 @@ class dfpn84_gsfHead(nn.Module):
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
                             nn.ReLU(True))
-        self.se = nn.Sequential(
-                            nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
-                            nn.Sigmoid())
+        # self.se = nn.Sequential(
+        #                     nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
+        #                     nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
-        # self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
-        self.gap2 = nn.Sequential(
-                            nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
-                            nn.ReLU(True))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
+        # self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
+        # self.gap2 = nn.Sequential(
+                            # nn.Conv2d(inter_channels, inter_channels, 1, bias=False),
+                            # norm_layer(inter_channels),
+                            # nn.ReLU(True))
         
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
@@ -96,12 +96,12 @@ class dfpn84_gsfHead(nn.Module):
         #gp
         gp = self.gap(c4)    
         # se
-        se = self.se(gp)
-        out = out + se*out
+        # se = self.se(gp)
+        # out = out + se*out
         out = self.gff(out)
         #
-        # out = torch.cat([out, gp.expand_as(out)], dim=1)
-        out = out+gp
+        out = torch.cat([out, gp.expand_as(out)], dim=1)
+        # out = out+gp
         return self.conv6(out)
 
 class Context(nn.Module):
