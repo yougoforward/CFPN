@@ -16,14 +16,8 @@ class dfpn85_gsf(BaseNet):
 
         self.head = dfpn85_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
+            self.localUp3=localUp(512, 1024, norm_layer, self._up_kwargs)
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
-        
-        if se_loss:
-            self.secls = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(2048, 512, 1, bias=False),
-                            norm_layer(512),
-                            nn.ReLU(True),
-                            nn.Conv2d(512, nclass, 1, bias=True))
 
     def forward(self, x):
         imsize = x.size()[2:]
@@ -31,10 +25,8 @@ class dfpn85_gsf(BaseNet):
         x = self.head(c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
-        if self.se_loss:
-            seout = self.secls(c4)
-            outputs.append(seout)
         if self.aux:
+            c3 = self.localUp3(c2,c3)
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
             outputs.append(auxout)
@@ -104,10 +96,8 @@ class dfpn85_gsfHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-
         return self.conv6(out)
 
 class Context(nn.Module):
