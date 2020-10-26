@@ -49,15 +49,12 @@ class dfpn84_gsfHead(nn.Module):
                             norm_layer(inter_channels),
                             nn.ReLU(True))
         self.se = nn.Sequential(
-                            nn.Conv2d(inter_channels, inter_channels//16, 1, bias=False),
-                            norm_layer(inter_channels//16),
-                            nn.ReLU(True),
-                            nn.Conv2d(inter_channels//16, inter_channels, 1, bias=True),
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
-        
+
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
@@ -118,15 +115,15 @@ class Context(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels//2, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_channels//2),
                                    nn.ReLU())
-        self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU())
+        # self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels//2),
+        #                            nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 3, padding=1, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(out_channels+in_channels//2, out_channels//2, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels//2),
                                    nn.ReLU(),
                                     )
@@ -138,8 +135,8 @@ class localUp(nn.Module):
         n,c,h,w =c1.size()
         c1p = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2p = self.project(c2)
-        out = torch.cat([c1p,c2p], dim=1)
+        # c2p = self.project(c2)
+        out = torch.cat([c1p,c2], dim=1)
         out = self.refine(out)
         out = self.project2(out)
         out = self.relu(c2+out)
