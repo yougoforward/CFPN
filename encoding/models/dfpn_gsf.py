@@ -57,6 +57,8 @@ class dfpn_gsfHead(nn.Module):
 
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
+        
+        self.localUp2 = localUp2(256, 512, norm_layer, up_kwargs)
 
         self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
@@ -93,11 +95,10 @@ class dfpn_gsfHead(nn.Module):
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.gff(out, c1)
-
+        out = self.gff(out)
+        out = self.localUp2(c1, c20, out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-
         return self.conv6(out)
 
 class Context(nn.Module):
@@ -114,6 +115,64 @@ class Context(nn.Module):
         cat = torch.cat([feat0, feat1], dim=1)  
         return cat, feat0, feat1
 
+class localUp2(nn.Module):
+    def __init__(self, in_channels1, in_channels2, norm_layer, up_kwargs):
+        super(localUp2, self).__init__()
+        self.key_dim = in_channels1//8
+        self.refine = nn.Sequential(nn.Conv2d(in_channels1, in_channels1, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_channels1),
+                                   nn.ReLU(),
+                                   nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=True))
+        self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=True)) 
+        self._up_kwargs = up_kwargs
+
+
+
+    def forward(self, c1,c2,out):
+        n,c,hd,wd = c1.size()
+        c1 = self.refine(c1)
+        c2 = self.refine2(c2)
+        _,_,hs,ws = c2.size()
+        
+        scale_h = hs.float()/hd
+        scale_w = ws.float()/wd
+        
+        dest_Y, dest_X = torch.meshgrid(torch.range(h), torch.range(w))
+        # dest point in src
+        src_y = (dest_Y+0.5)*scale_h-0.5
+        src_x = (dest_X+0.5)*scale_w-0.5
+        
+        # four adjacent point in src
+        src_x_0 = torch.floor(src_x)
+        src_y_0 = torch.floor(src_y)
+        src_x_1 = min(src_x_0 + 1, ws - 1)
+        src_y_1 = min(src_y_0 + 1, hs - 1)
+        
+        up_left = src_y_0*hs+src_x_0
+        up_right = src_y_1*hs+src_x_0
+        down_left = src_y_0*hs+src_x_1
+        down_right = src_y_1*hs+src_x_1
+        
+        c2 = c2.view(n, -1, hs*ws)
+        t1 = torch.index_select(c2, 2, up_left)
+        t2 = torch.index_select(c2, 2, up_right)
+        t3 = torch.index_select(c2, 2, down_left)
+        t4 = torch.index_select(c2, 2, down_right)
+        
+        unfold_up_c2 = torch.stack([t1,t2,t3,t4], 3).permute(0,2,1,3)        
+        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
+        energy = torch.matmul(c1.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
+        att = torch.softmax(energy, dim=-1)
+        
+        out = out.view(n, -1, hs*ws)
+        o1 = torch.index_select(out, 2, up_left)
+        o2 = torch.index_select(out, 2, up_right)
+        o3 = torch.index_select(out, 2, down_left)
+        o4 = torch.index_select(out, 2, down_right)
+        unfold_out = torch.stack([o1,o2,o3,o4], 3).permute(0,2,1,3)
+        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
+        return out
+    
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
@@ -170,17 +229,9 @@ class PAM_Module(nn.Module):
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
-        
-        self.skip = nn.Sequential(nn.Conv2d(256, 48, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(48),
-                                   nn.ReLU()
-                                   )
-        self.refine = nn.Sequential(nn.Conv2d(in_dim+48, in_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_dim),
-                                   nn.ReLU()
-                                   )
 
-    def forward(self, x, xl):
+
+    def forward(self, x):
         """
             inputs :
                 x : input feature maps( B X C X H X W)
@@ -188,10 +239,6 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        # _,_,hl,wl = xl.size()
-        # x_skip = self.skip(xl)
-        # x = self.refine(torch.cat([x_skip, F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)], dim=1))
-        
         xp = self.pool(x)
         m_batchsize, C, height, width = x.size()
         m_batchsize, C, hp, wp = xp.size()
@@ -203,12 +250,8 @@ class PAM_Module(nn.Module):
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
-        _,_,hl,wl = xl.size()
-        x_skip = self.skip(xl)
-        xup=F.interpolate(x, (hl,wl), mode='bilinear', align_corners=True)
-        x = self.refine(torch.cat([x_skip, xup], dim=1))
+
         gamma = self.gamma(x)
-        out=F.interpolate(out, (hl,wl), mode='bilinear', align_corners=True)
-        out = (1-gamma)*out + gamma*xup
+        out = (1-gamma)*out + gamma*x
         return out
 
