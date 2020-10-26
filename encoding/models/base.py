@@ -15,6 +15,7 @@ from torch.nn.parallel.data_parallel import DataParallel
 
 from ..nn import JPU, JPU_X
 from ..dilated import resnet as resnet
+# from .. import dilated as resnet
 from ..utils import batch_pix_accuracy, batch_intersection_union
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
@@ -24,7 +25,7 @@ __all__ = ['BaseNet', 'MultiEvalModule', 'MultiEvalModule_whole']
 class BaseNet(nn.Module):
     def __init__(self, nclass, backbone, aux, se_loss, jpu=True, dilated=False, norm_layer=None,
                  base_size=520, crop_size=480, mean=[.485, .456, .406],
-                 std=[.229, .224, .225], root='./init_models', **kwargs):
+                 std=[.229, .224, .225], root='~/.encoding/models', **kwargs):
         super(BaseNet, self).__init__()
         self.nclass = nclass
         self.aux = aux
