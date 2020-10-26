@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .fcn import FCNHead
-from .base2 import BaseNet
+from .base import BaseNet
 
 __all__ = ['dfpn82_gsf', 'get_dfpn82_gsf']
 
