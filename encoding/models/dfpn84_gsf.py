@@ -136,7 +136,7 @@ class localUp(nn.Module):
         c1p = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2p = self.project(c2)
-        out = torch.cat([c1p,c2], dim=1)
+        out = torch.cat([c1p,c2p], dim=1)
         out = self.refine(out)
         out = self.project2(out)
         out = self.relu(c2+out)
