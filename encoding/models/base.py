@@ -15,6 +15,7 @@ from torch.nn.parallel.data_parallel import DataParallel
 
 from ..nn import JPU, JPU_X
 from .. import dilated as resnet
+from ..dilated import *
 from ..utils import batch_pix_accuracy, batch_intersection_union
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
@@ -117,17 +118,17 @@ class BaseNet(nn.Module):
         self.base_size = base_size
         self.crop_size = crop_size
         # copying modules from pretrained models
-        if backbone == 'resnet50':
-            self.pretrained = resnet.resnet50(pretrained=True, dilated=dilated,
-                                              norm_layer=norm_layer, root=root)
-        elif backbone == 'resnet101':
-            self.pretrained = resnet.resnet101(pretrained=True, dilated=dilated,
-                                               norm_layer=norm_layer, root=root)
-        elif backbone == 'resnet152':
-            self.pretrained = resnet.resnet152(pretrained=True, dilated=dilated,
-                                               norm_layer=norm_layer, root=root)
-        else:
-            raise RuntimeError('unknown backbone: {}'.format(backbone))
+        # if backbone == 'resnet50':
+        #     self.pretrained = resnet.resnet50(pretrained=True, dilated=dilated,
+        #                                       norm_layer=norm_layer, root=root)
+        # elif backbone == 'resnet101':
+        #     self.pretrained = resnet.resnet101(pretrained=True, dilated=dilated,
+        #                                        norm_layer=norm_layer, root=root)
+        # elif backbone == 'resnet152':
+        #     self.pretrained = resnet.resnet152(pretrained=True, dilated=dilated,
+        #                                        norm_layer=norm_layer, root=root)
+        # else:
+        #     raise RuntimeError('unknown backbone: {}'.format(backbone))
         # bilinear upsample options
         self._up_kwargs = up_kwargs
         self.backbone = backbone
