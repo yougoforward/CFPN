@@ -14,7 +14,7 @@ from torch.nn import Conv2d
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 
-from ..functions import rectify
+from ..functions2 import rectify
 
 __all__ = ['RFConv2d']
 
