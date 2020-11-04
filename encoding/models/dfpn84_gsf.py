@@ -71,7 +71,7 @@ class dfpn84_gsfHead(nn.Module):
                                    nn.ReLU(),
                                    )
         
-        self.project2 = nn.Sequential(nn.Conv2d(inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+        self.project2 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
@@ -86,10 +86,7 @@ class dfpn84_gsfHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        
-        
-        
-        
+        self.localUp2=localUp(256, 256, norm_layer, up_kwargs)
         
         
     def forward(self, c1,c2,c3,c4):
@@ -165,6 +162,7 @@ class localUp(nn.Module):
         out = self.project2(out)
         out = self.relu(c2+out)
         return out
+
 
 
 def get_dfpn84_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
