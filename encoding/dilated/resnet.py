@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 
 from ..nn import SplAtConv2d, DropBlock2D
-from ..model_store import get_model_file
+from ..models.model_store import get_model_file
 
 __all__ = ['ResNet', 'Bottleneck',
            'resnet50', 'resnet101', 'resnet152']
