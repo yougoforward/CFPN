@@ -15,7 +15,6 @@ from torch.nn.parallel.data_parallel import DataParallel
 
 from ..nn import JPU, JPU_X
 from .. import dilated as resnet
-from ..dilated import *
 from ..utils import batch_pix_accuracy, batch_intersection_union
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
@@ -24,25 +23,14 @@ __all__ = ['BaseNet', 'MultiEvalModule', 'MultiEvalModule_whole']
 def get_backbone(name, **kwargs):
     models = {
         # resnet
-        'resnet50': resnet50,
-        'resnet101': resnet101,
-        'resnet152': resnet152,
+        'resnet50': resnet.resnet50,
+        'resnet101': resnet.resnet101,
+        'resnet152': resnet.resnet152,
         # resnest
-        'resnest50': resnest50,
-        'resnest101': resnest101,
-        'resnest200': resnest200,
-        'resnest269': resnest269,
-        # resnet other variants
-        'resnet50s': resnet50s,
-        'resnet101s': resnet101s,
-        'resnet152s': resnet152s,
-        'resnet50d': resnet50d,
-        'resnext50_32x4d': resnext50_32x4d,
-        'resnext101_32x8d': resnext101_32x8d,
-        # other segmentation backbones
-        'xception65': xception65,
-        'wideresnet38': wideresnet38,
-        'wideresnet50': wideresnet50,
+        'resnest50': resnet.resnest50,
+        'resnest101': resnet.resnest101,
+        'resnest200': resnet.resnest200,
+        'resnest269': resnet.resnest269,
         }
     name = name.lower()
     if name not in models:
