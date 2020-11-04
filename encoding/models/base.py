@@ -20,7 +20,90 @@ from ..utils import batch_pix_accuracy, batch_intersection_union
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
 __all__ = ['BaseNet', 'MultiEvalModule', 'MultiEvalModule_whole']
+def get_backbone(name, **kwargs):
+    models = {
+        # resnet
+        'resnet50': resnet50,
+        'resnet101': resnet101,
+        'resnet152': resnet152,
+        # resnest
+        'resnest50': resnest50,
+        'resnest101': resnest101,
+        'resnest200': resnest200,
+        'resnest269': resnest269,
+        # resnet other variants
+        'resnet50s': resnet50s,
+        'resnet101s': resnet101s,
+        'resnet152s': resnet152s,
+        'resnet50d': resnet50d,
+        'resnext50_32x4d': resnext50_32x4d,
+        'resnext101_32x8d': resnext101_32x8d,
+        # other segmentation backbones
+        'xception65': xception65,
+        'wideresnet38': wideresnet38,
+        'wideresnet50': wideresnet50,
+        }
+    name = name.lower()
+    if name not in models:
+        raise ValueError('%s\n\t%s' % (str(name), '\n\t'.join(sorted(models.keys()))))
+    net = models[name](**kwargs)
+    return net
+# class BaseNet(nn.Module):
+#     def __init__(self, nclass, backbone, aux, se_loss, dilated=False, norm_layer=None,
+#                  base_size=520, crop_size=480, mean=[.485, .456, .406],
+#                  std=[.229, .224, .225], root='~/.encoding/models', *args, **kwargs):
+#         super(BaseNet, self).__init__()
+#         self.nclass = nclass
+#         self.aux = aux
+#         self.se_loss = se_loss
+#         self.mean = mean
+#         self.std = std
+#         self.base_size = base_size
+#         self.crop_size = crop_size
+#         # copying modules from pretrained models
+#         self.backbone = backbone
 
+#         self.pretrained = get_backbone(backbone, pretrained=True, dilated=dilated,
+#                                        norm_layer=norm_layer, root=root,
+#                                        *args, **kwargs)
+#         self.pretrained.fc = None
+#         self._up_kwargs = up_kwargs
+
+#     def base_forward(self, x):
+#         if self.backbone.startswith('wideresnet'):
+#             x = self.pretrained.mod1(x)
+#             x = self.pretrained.pool2(x)
+#             x = self.pretrained.mod2(x)
+#             x = self.pretrained.pool3(x)
+#             x = self.pretrained.mod3(x)
+#             x = self.pretrained.mod4(x)
+#             x = self.pretrained.mod5(x)
+#             c3 = x.clone()
+#             x = self.pretrained.mod6(x)
+#             x = self.pretrained.mod7(x)
+#             x = self.pretrained.bn_out(x)
+#             return None, None, c3, x
+#         else:
+#             x = self.pretrained.conv1(x)
+#             x = self.pretrained.bn1(x)
+#             x = self.pretrained.relu(x)
+#             x = self.pretrained.maxpool(x)
+#             c1 = self.pretrained.layer1(x)
+#             c2 = self.pretrained.layer2(c1)
+#             c3 = self.pretrained.layer3(c2)
+#             c4 = self.pretrained.layer4(c3)
+#         return c1, c2, c3, c4
+
+#     def evaluate(self, x, target=None):
+#         pred = self.forward(x)
+#         if isinstance(pred, (tuple, list)):
+#             pred = pred[0]
+#         if target is None:
+#             return pred
+#         correct, labeled = batch_pix_accuracy(pred.data, target.data)
+#         inter, union = batch_intersection_union(pred.data, target.data, self.nclass)
+#         return correct, labeled, inter, union
+    
 class BaseNet(nn.Module):
     def __init__(self, nclass, backbone, aux, se_loss, jpu=True, dilated=False, norm_layer=None,
                  base_size=520, crop_size=480, mean=[.485, .456, .406],
@@ -48,6 +131,11 @@ class BaseNet(nn.Module):
         # bilinear upsample options
         self._up_kwargs = up_kwargs
         self.backbone = backbone
+        self.pretrained = get_backbone(backbone, pretrained=True, dilated=dilated,
+                                       norm_layer=norm_layer, root=root,
+                                       *args, **kwargs)
+        self.pretrained.fc = None
+        
         self.jpu = None
         if jpu == 'JPU':
             self.jpu = JPU([512, 1024, 2048], width=512, norm_layer=norm_layer, up_kwargs=up_kwargs)
