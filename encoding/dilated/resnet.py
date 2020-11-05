@@ -10,12 +10,20 @@ import math
 import torch
 import torch.nn as nn
 
-from ...nn import SplAtConv2d, DropBlock2D, GlobalAvgPool2d, RFConv2d
-from ..model_store import get_model_file
+from ..nn import SplAtConv2d, DropBlock2D
+from ..models.model_store import get_model_file
 
 __all__ = ['ResNet', 'Bottleneck',
            'resnet50', 'resnet101', 'resnet152']
+   
+class GlobalAvgPool2d(nn.Module):
+    def __init__(self):
+        """Global average pooling over the input's spatial dimensions"""
+        super(GlobalAvgPool2d, self).__init__()
 
+    def forward(self, inputs):
+        return F.adaptive_avg_pool2d(inputs, 1).view(inputs.size(0), -1)
+    
 class Bottleneck(nn.Module):
     """ResNet Bottleneck
     """
@@ -54,13 +62,13 @@ class Bottleneck(nn.Module):
                 rectify_avg=rectify_avg,
                 norm_layer=norm_layer,
                 dropblock_prob=dropblock_prob)
-        elif rectified_conv:
-            self.conv2 = RFConv2d(
-                group_width, group_width, kernel_size=3, stride=stride,
-                padding=dilation, dilation=dilation,
-                groups=cardinality, bias=False,
-                average_mode=rectify_avg)
-            self.bn2 = norm_layer(group_width)
+        # elif rectified_conv:
+        #     self.conv2 = RFConv2d(
+        #         group_width, group_width, kernel_size=3, stride=stride,
+        #         padding=dilation, dilation=dilation,
+        #         groups=cardinality, bias=False,
+        #         average_mode=rectify_avg)
+        #     self.bn2 = norm_layer(group_width)
         else:
             self.conv2 = nn.Conv2d(
                 group_width, group_width, kernel_size=3, stride=stride,
@@ -161,10 +169,11 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.rectified_conv = rectified_conv
         self.rectify_avg = rectify_avg
-        if rectified_conv:
-            conv_layer = RFConv2d
-        else:
-            conv_layer = nn.Conv2d
+        conv_layer = nn.Conv2d
+        # if rectified_conv:
+        #     conv_layer = RFConv2d
+        # else:
+        #     conv_layer = nn.Conv2d
         conv_kwargs = {'average_mode': rectify_avg} if rectified_conv else {}
         if deep_stem:
             self.conv1 = nn.Sequential(
