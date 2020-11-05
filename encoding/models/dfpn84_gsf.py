@@ -116,7 +116,8 @@ class dfpn84_gsfHead(nn.Module):
         out = self.gff(out)
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         _,_,hl,wl = c1.size()
-        out = self.decoder(torch.cat([F.interpolate(self.project2(out), (hl,wl), **self._up_kwargs), self.skip(c1)], dim=1))
+        # out = self.decoder(torch.cat([F.interpolate(self.project2(out), (hl,wl), **self._up_kwargs), self.skip(c1)], dim=1))
+        out = localUp2(c1, out)
         
         return self.conv6(out)
 
