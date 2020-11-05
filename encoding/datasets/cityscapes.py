@@ -100,10 +100,10 @@ class CitySegmentation(BaseDataset):
             ow = int(1.0 * w * oh / h)
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
-        # random rotate -10~10, mask using NN rotate
-        deg = random.uniform(-10, 10)
-        img = img.rotate(deg, resample=Image.BILINEAR)
-        mask = mask.rotate(deg, resample=Image.NEAREST)
+        # # random rotate -10~10, mask using NN rotate
+        # deg = random.uniform(-10, 10)
+        # img = img.rotate(deg, resample=Image.BILINEAR)
+        # mask = mask.rotate(deg, resample=Image.NEAREST)
         # pad crop
         if short_size < crop_size:
             padh = crop_size - oh if oh < crop_size else 0
