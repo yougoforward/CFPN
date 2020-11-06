@@ -88,7 +88,7 @@ class dfpn84_gsfHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.localUp2=localUp2(256, inter_channels, norm_layer, up_kwargs)
+        self.localUp2=localUp3(256, inter_channels, norm_layer, up_kwargs)
         
         
     def forward(self, c1,c2,c3,c4):
@@ -239,7 +239,7 @@ class localUp4(nn.Module):
         self.refine = nn.Sequential(SeparableConv2d(48+out_channels//2, out_channels//2, 3, padding=1, dilation=1, norm_layer=norm_layer),
                                    norm_layer(out_channels//2),
                                    nn.ReLU(),
-                                   SeparableConv2d(out_channels//2, out_channels//2, 3, padding=1, dilation=1, norm_layer=norm_layer),,
+                                   SeparableConv2d(out_channels//2, out_channels//2, 3, padding=1, dilation=1, norm_layer=norm_layer),
                                    norm_layer(out_channels//2),
                                    nn.ReLU(),
                                     )
