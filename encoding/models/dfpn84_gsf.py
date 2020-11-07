@@ -73,7 +73,7 @@ class dfpn84_gsfHead(nn.Module):
                                    )
         
         self.project2 = nn.Sequential(
-            nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+            nn.Conv2d(inter_channels, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
@@ -88,7 +88,9 @@ class dfpn84_gsfHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.localUp2=localUp3(256, inter_channels, norm_layer, up_kwargs)
+        self.localUp2=localUp(256, inter_channels, norm_layer, up_kwargs)
+        self.localUp20=localUp(256, 256, norm_layer, up_kwargs)
+
         
         
     def forward(self, c1,c2,c3,c4):
@@ -116,6 +118,7 @@ class dfpn84_gsfHead(nn.Module):
         out = self.gff(out)
         _,_,hl,wl = c1.size()
         # out = self.decoder(torch.cat([F.interpolate(out, (hl,wl), **self._up_kwargs), self.skip(c1)], dim=1))
+        c1 = self.localUp20(c1, self.project2(c2))
         out = self.localUp2(c1, out)
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)
