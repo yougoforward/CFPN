@@ -7,7 +7,7 @@
 import os
 import random
 import numpy as np
-
+import torchvision.transforms as transforms
 import torch
 
 from tqdm import tqdm
@@ -35,7 +35,10 @@ class CitySegmentation(BaseDataset):
                               5,  -1,  6,  7,  8,  9,
                               10, 11, 12, 13, 14, 15,
                               -1, -1, 16, 17, 18])
-        self._mapping = np.array(range(-1, len(self._key)-1)).astype('int32')
+        self._mapping = np.array(range(-1, len(self._key)-1)).astype('int32')        
+        self.colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)
+
+        
 
     def _class_to_index(self, mask):
         # assert the values
@@ -121,6 +124,7 @@ class CitySegmentation(BaseDataset):
         #     img = img.filter(ImageFilter.GaussianBlur(
         #         radius=random.random()))
         # final transform
+        # img = self.colorjitter(img)
         return img, self._mask_transform(mask)
 
     def _mask_transform(self, mask):
