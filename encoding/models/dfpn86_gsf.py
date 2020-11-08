@@ -52,6 +52,9 @@ class dfpn86_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff2 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff3 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -76,10 +79,12 @@ class dfpn86_gsfHead(nn.Module):
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
+        out3 = self.gff3(out3)
         cat3, p3_1, p3_8=self.context3(out3)
         p3 = self.project3(cat3)
         
         out2 = self.localUp3(c2, p3)
+        out2 = self.gff2(out2)
         cat2, p2_1, p2_8=self.context2(out2)
         
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
@@ -94,10 +99,8 @@ class dfpn86_gsfHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-
         return self.conv6(out)
 
 class Context(nn.Module):
@@ -132,15 +135,10 @@ class localUp(nn.Module):
         self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    )
-        self.dconv = nn.Sequential(nn.ConvTranspose2d(out_channels, out_channels, 3, stride=2, padding=1, output_padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU(),
-                                    )
         self.relu = nn.ReLU()
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1p = self.connect(c1) # n, 64, h, w
-        c2 = self.dconv(c2)
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2p = self.project(c2)
         out = torch.cat([c1p,c2p], dim=1)
@@ -148,7 +146,7 @@ class localUp(nn.Module):
         out = self.project2(out)
         out = self.relu(c2+out)
         return out
-    
+
 
 def get_dfpn86_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
