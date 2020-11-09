@@ -88,14 +88,14 @@ class dfpn87_gsfHead(nn.Module):
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-        out = self.pam(out)
-
         #gp
         gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.gff(out)
+        out = self.pam(out)
+        # out = self.gff(out)
+        
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)
@@ -210,7 +210,7 @@ class PAM_Module2(nn.Module):
                                    norm_layer(value_dim),
                                    nn.ReLU(),
                                     )
-        self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 3, padding=1, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_dim),
                                    nn.ReLU(),
                                     )
