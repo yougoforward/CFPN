@@ -215,7 +215,7 @@ class PAM_Module2(nn.Module):
         #                            nn.ReLU(),
         #                             )
         self.softmax = nn.Softmax(dim=-1)
-        self.gamma = nn.Parameters(torch.tensor(1))
+        self.gamma = nn.Parameter(torch.tensor(1))
 
 
     def forward(self, x):
