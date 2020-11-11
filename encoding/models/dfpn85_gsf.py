@@ -16,7 +16,6 @@ class dfpn85_gsf(BaseNet):
 
         self.head = dfpn85_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
-            # self.localUp3=localUp(512, 1024, norm_layer, self._up_kwargs)
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
     def forward(self, x):
@@ -26,7 +25,6 @@ class dfpn85_gsf(BaseNet):
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
-            # c3 = self.localUp3(c2,c3)
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
             outputs.append(auxout)
@@ -96,8 +94,6 @@ class dfpn85_gsfHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-        _,_,hl,wl = c1.size()
-        out = F.interpolate(out, (hl,wl), **self._up_kwargs)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)
@@ -194,7 +190,7 @@ class PAM_Module(nn.Module):
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
 
-        gamma = self.gamma(x)
-        out = (1-gamma)*out + gamma*x
+        # gamma = self.gamma(x)
+        # out = (1-gamma)*out + gamma*x
         return out
 
