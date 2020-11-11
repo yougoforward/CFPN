@@ -215,8 +215,6 @@ class PAM_Module2(nn.Module):
         #                            nn.ReLU(),
         #                             )
         self.softmax = nn.Softmax(dim=-1)
-        self.gamma = nn.Parameter(torch.ones(1))
-
 
     def forward(self, x):
         """
@@ -240,5 +238,5 @@ class PAM_Module2(nn.Module):
         out = out.view(m_batchsize, C, height, width)
 
         # out = self.refine(torch.cat([x, out], dim=1))
-        out = x + self.gamma*out
+        out = x + out
         return out

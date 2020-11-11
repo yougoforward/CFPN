@@ -51,8 +51,8 @@ class dfpn84_gsfHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,
-                              out_dim=inter_channels, norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.pam = PAM_Module2(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -71,28 +71,6 @@ class dfpn84_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        
-        self.project2 = nn.Sequential(
-            nn.Conv2d(inter_channels, 256, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU(),
-                                   )
-        self.skip = nn.Sequential(nn.Conv2d(256, 48, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(48),
-                                   nn.ReLU(),
-                                   )
-        self.decoder = nn.Sequential(nn.Conv2d(304, 256, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU(),
-                                   nn.Conv2d(256, 256, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU(),
-                                   )
-        self.localUp2=localUp(256, inter_channels, norm_layer, up_kwargs)
-        self.localUp20=localUp(256, 256, norm_layer, up_kwargs)
-
-        
-        
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -111,15 +89,14 @@ class dfpn84_gsfHead(nn.Module):
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         #gp
-        gp = self.gap(c4)  
+        gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.gff(out)
-        _,_,hl,wl = c1.size()
-        # out = self.decoder(torch.cat([F.interpolate(out, (hl,wl), **self._up_kwargs), self.skip(c1)], dim=1))
-        c1 = self.localUp20(c1, self.project2(c2))
-        out = self.localUp2(c1, out)
+        out = self.pam(out)
+        # out = self.gff(out)
+        
+        #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)
 
@@ -166,101 +143,8 @@ class localUp(nn.Module):
         out = self.project2(out)
         out = self.relu(c2+out)
         return out
-class localUp2(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
-        super(localUp2, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, 48, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(48),
-                                   nn.ReLU())
-        self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU())
 
-        self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(48+out_channels//2, out_channels//2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU(),
-                                   nn.Conv2d(out_channels//2, out_channels//2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU(),
-                                    )
-        self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   )
-        self.relu = nn.ReLU()
-    def forward(self, c1,c2):
-        n,c,h,w =c1.size()
-        c1p = self.connect(c1) # n, 64, h, w
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2p = self.project(c2)
-        out = torch.cat([c1p,c2p], dim=1)
-        out = self.refine(out)
-        out = self.project2(out)
-        out = self.relu(c2+out)
-        return out
-class localUp3(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
-        super(localUp3, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, 48, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(48),
-                                   nn.ReLU())
-        self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU())
 
-        self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(48+out_channels//2, out_channels//2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU()
-                                    )
-        self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   )
-        self.relu = nn.ReLU()
-    def forward(self, c1,c2):
-        n,c,h,w =c1.size()
-        c1p = self.connect(c1) # n, 64, h, w
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2p = self.project(c2)
-        out = torch.cat([c1p,c2p], dim=1)
-        out = self.refine(out)
-        out = self.project2(out)
-        out = self.relu(c2+out)
-        return out
-    
-class localUp4(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
-        super(localUp4, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, 48, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(48),
-                                   nn.ReLU())
-        self.project = nn.Sequential(nn.Conv2d(out_channels, out_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU())
-
-        self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(SeparableConv2d(48+out_channels//2, out_channels//2, 3, padding=1, dilation=1, norm_layer=norm_layer),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU(),
-                                   SeparableConv2d(out_channels//2, out_channels//2, 3, padding=1, dilation=1, norm_layer=norm_layer),
-                                   norm_layer(out_channels//2),
-                                   nn.ReLU(),
-                                    )
-        self.project2 = nn.Sequential(nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   )
-        self.relu = nn.ReLU()
-    def forward(self, c1,c2):
-        n,c,h,w =c1.size()
-        c1p = self.connect(c1) # n, 64, h, w
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2p = self.project(c2)
-        out = torch.cat([c1p,c2p], dim=1)
-        out = self.refine(out)
-        out = self.project2(out)
-        out = self.relu(c2+out)
-        return out
-    
 def get_dfpn84_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
@@ -312,16 +196,47 @@ class PAM_Module(nn.Module):
         out = (1-gamma)*out + gamma*x
         return out
 
-class SeparableConv2d(nn.Module):
-    def __init__(self, inplanes, planes, kernel_size=3, stride=1, padding=1, dilation=1, bias=False, norm_layer=nn.BatchNorm2d):
-        super(SeparableConv2d, self).__init__()
+class PAM_Module2(nn.Module):
+    """ Position attention module"""
+    #Ref from SAGAN
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
+        super(PAM_Module2, self).__init__()
+        self.chanel_in = in_dim
+        self.pool = nn.MaxPool2d(kernel_size=2)
 
-        self.conv1 = nn.Conv2d(inplanes, inplanes, kernel_size, stride, padding, dilation, groups=inplanes, bias=bias)
-        self.bn = norm_layer(inplanes)
-        self.pointwise = nn.Conv2d(inplanes, planes, 1, 1, 0, 1, 1, bias=bias)
+        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(value_dim),
+                                   nn.ReLU(),
+                                    )
+        # self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_dim),
+        #                            nn.ReLU(),
+        #                             )
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn(x)
-        x = self.pointwise(x)
-        return x
+        """
+            inputs :
+                x : input feature maps( B X C X H X W)
+            returns :
+                out : attention value + input feature
+                attention: B X (HxW) X (HxW)
+        """
+        xp = self.pool(x)
+        # xp = x
+        m_batchsize, C, height, width = x.size()
+        m_batchsize, C, hp, wp = xp.size()
+        proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
+        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
+        energy = torch.bmm(proj_query, proj_key)
+        attention = self.softmax(energy)
+        proj_value = self.val(xp).view(m_batchsize, -1, wp*hp)
+        
+        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+        out = out.view(m_batchsize, C, height, width)
+
+        # out = self.refine(torch.cat([x, out], dim=1))
+        # out = x + out
+        return out
