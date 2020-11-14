@@ -17,6 +17,11 @@ from .dfpn85_gsf import *
 from .dfpn86_gsf import *
 from .dfpn87_gsf import *
 from .dfpn_gsf import *
+from .pam import *
+from .fpn import *
+from .fpn_pam import *
+from .fpn_aspp import *
+
 
 
 from .vggnet import *
@@ -55,6 +60,11 @@ def get_segmentation_model(name, **kwargs):
         'dfpn85_gsf': get_dfpn85_gsf,
         'dfpn86_gsf': get_dfpn86_gsf,
         'dfpn87_gsf': get_dfpn87_gsf,
+        
+        'pam': get_pam,
+        'fpn': get_fpn,
+        'fpn_pam': get_fpn_pam,
+        'fpn_aspp': get_fpn_aspp,
         
         
         'vggnet': get_vggnet,
