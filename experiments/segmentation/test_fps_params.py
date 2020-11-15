@@ -23,7 +23,7 @@ if __name__ == "__main__":
     model.eval()
     x = torch.Tensor(1, 3, 520, 520).cuda()
 
-    N = 10
+    N = 100
     with torch.no_grad():
         for _ in range(N):
             out = model(x)
