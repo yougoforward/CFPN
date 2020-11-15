@@ -51,9 +51,8 @@ class cfpnHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.pam = PAM_Module2(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        
+        # self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
@@ -67,17 +66,12 @@ class cfpnHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(9*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sa = SA_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.spool = SPool(inter_channels, inter_channels, 3, 1, norm_layer)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        # sp = self.spool(c4)
-        # sa = self.sa(c4)
-        
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -92,94 +86,17 @@ class cfpnHead(nn.Module):
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-        # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-        # sa = F.interpolate(sa, (h,w), **self._up_kwargs)
-        # sp = F.interpolate(sp, (h,w), **self._up_kwargs)
-        # sp = self.spool(out2)
-        # sa = self.sa2(self.sa1(out2))
-        sa = self.sa(out2)
-        sp = self.spool(out2)
-        pa = self.pam(out2)
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, sa, sp, pa], dim=1))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
         #gp
         gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.gff(out)
-
+        # out = self.gff(out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-
         return self.conv6(out)
-
-class SPool(nn.Module):
-    def __init__(self, in_dim, out_dim, kernel_size, padding, norm_layer):
-        super(SPool, self).__init__()
-        self.project = nn.Sequential(nn.Conv2d(in_dim, out_dim, kernel_size, padding=padding, dilation=1, bias=False),
-                                   norm_layer(out_dim), nn.ReLU())
-
-    def forward(self, x):
-        n,c,h,w = x.size()
-        xpool_h = torch.mean(x, dim=2, keepdim=True)
-        xpool_w = torch.mean(x, dim=3, keepdim=True)
-        xpool = xpool_h.expand_as(x)+xpool_w.expand_as(x)
-        out = self.project(xpool)
-        return out
-
-class SA_Module(nn.Module):
-    """ Position attention module"""
-    #Ref from SAGAN
-    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
-        super(SA_Module, self).__init__()
-        self.chanel_in = in_dim
-        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.project = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(value_dim), nn.ReLU())
-        self.project2 = nn.Sequential(nn.Conv2d(in_dim, value_dim, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(value_dim), nn.ReLU())
-        self.key_dim = key_dim
-
-
-    def forward(self, x):
-        """
-            inputs :
-                x : input feature maps( B X C X H X W)
-            returns :
-                out : attention value + input feature
-                attention: B X (HxW) X (HxW)
-        """
-        n, c, h, w = x.size()
-        c2 = self.key_dim
-        query = self.query_conv(x)
-        key = self.key_conv(x)
-        value = self.project(x)
-        # value = x
-        
-        key_h = query.permute(0,3,1,2)#n,w,c2,h
-        key_w = query.permute(0,2,1,3)#n,h,c2,w
-        query_h = key.permute(0,3,2,1)#n,w,h,c2
-        query_w = key.permute(0,2,3,1)#n,h,w,c2
-        
-        #h attention
-        energy_h = torch.matmul(query_h, key_h)#n,w,h,h
-        attention_h = torch.softmax(energy_h, -1)
-        value_h = value.permute(0,3,2,1).contiguous()#n,w,h,c
-        value_h = torch.matmul(attention_h,value_h)#n,w,h,c
-        value_h = value_h.permute(0,3,2,1)
-        
-        #w attention
-        energy_w = torch.matmul(query_w, key_w)#n,h,w,w
-        attention_w = torch.softmax(energy_w, -1)
-        value_w = value.permute(0,2,3,1).contiguous()#n,h,w,c
-        value_w = torch.matmul(attention_w,value_w)#n,h,w,c
-        value_w = value_w.permute(0,3,1,2)
-        
-        out = value_h+value_w
-        out = self.project2(out)
-        return out
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
@@ -277,45 +194,3 @@ class PAM_Module(nn.Module):
         out = (1-gamma)*out + gamma*x
         return out
 
-class PAM_Module2(nn.Module):
-    """ Position attention module"""
-    #Ref from SAGAN
-    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
-        super(PAM_Module2, self).__init__()
-        self.chanel_in = in_dim
-        self.pool = nn.MaxPool2d(kernel_size=2)
-
-        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.val_conv = nn.Sequential(nn.Conv2d(in_dim, in_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_dim),
-                                   nn.ReLU())
-
-        self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
-
-        self.softmax = nn.Softmax(dim=-1)
-
-
-    def forward(self, x):
-        """
-            inputs :
-                x : input feature maps( B X C X H X W)
-            returns :
-                out : attention value + input feature
-                attention: B X (HxW) X (HxW)
-        """
-        xp = self.pool(x)
-        m_batchsize, C, height, width = x.size()
-        m_batchsize, C, hp, wp = xp.size()
-        proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
-        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
-        energy = torch.bmm(proj_query, proj_key)
-        attention = self.softmax(energy)
-        proj_value = self.val_conv(xp).view(m_batchsize, -1, wp*hp)
-        
-        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
-        out = out.view(m_batchsize, C, height, width)
-
-        # gamma = self.gamma(x)
-        # out = (1-gamma)*out + gamma*x
-        return out

@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     model.cuda()
     model.eval()
-    x = torch.Tensor(1, 3, 512, 512).cuda()
+    x = torch.Tensor(1, 3, 520, 520).cuda()
 
     N = 10
     with torch.no_grad():

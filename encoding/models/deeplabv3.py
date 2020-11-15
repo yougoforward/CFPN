@@ -36,12 +36,9 @@ class DeepLabV3(BaseNet):
 class DeepLabV3Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs, atrous_rates=(12, 24, 36)):
         super(DeepLabV3Head, self).__init__()
-        inter_channels = in_channels // 8
+        inter_channels = in_channels // 4
         self.aspp = ASPP_Module(in_channels, atrous_rates, norm_layer, up_kwargs)
         self.block = nn.Sequential(
-            nn.Conv2d(inter_channels, inter_channels, 3, padding=1, bias=False),
-            norm_layer(inter_channels),
-            nn.ReLU(True),
             nn.Dropout2d(0.1, False),
             nn.Conv2d(inter_channels, out_channels, 1))
 
@@ -89,10 +86,9 @@ class ASPP_Module(nn.Module):
         self.b4 = AsppPooling(in_channels, out_channels, norm_layer, up_kwargs)
 
         self.project = nn.Sequential(
-            nn.Conv2d(5*out_channels, out_channels, 1, bias=False),
-            norm_layer(out_channels),
-            nn.ReLU(True),
-            nn.Dropout2d(0.5, False))
+            nn.Conv2d(5*out_channels, 2*out_channels, 1, bias=False),
+            norm_layer(2*out_channels),
+            nn.ReLU(True))
 
     def forward(self, x):
         feat0 = self.b0(x)
