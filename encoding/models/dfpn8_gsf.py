@@ -216,6 +216,7 @@ class PSPModule(nn.Module):
     def forward(self, feats):
         n, c, _, _ = feats.size()
         priors = [stage(feats).view(n, c, -1) for stage in self.stages]
+        priors.append(F.interpolate(feats, (20,20), mode='nearest').view(n, c, -1))
         center = torch.cat(priors, -1)
         return center
     
