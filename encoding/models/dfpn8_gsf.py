@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['dfpn8_gsf', 'get_dfpn8_gsf']
+__all__ = ['fgpn8_gsf', 'get_fgpn8_gsf']
 
 
-class dfpn8_gsf(BaseNet):
+class fgpn8_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(dfpn8_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(fgpn8_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = dfpn8_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = fgpn8_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class dfpn8_gsf(BaseNet):
 
 
 
-class dfpn8_gsfHead(nn.Module):
+class fgpn8_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(dfpn8_gsfHead, self).__init__()
+        super(fgpn8_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -44,24 +44,14 @@ class dfpn8_gsfHead(nn.Module):
         #                            norm_layer(inter_channels),
         #                            nn.ReLU(),
         #                            )
-        
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
                             nn.ReLU(True))
-        self.gap2 = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, in_channels//16, 1, bias=False),
-                            norm_layer(in_channels//16),
-                            nn.ReLU(True))
-        self.se2 = nn.Sequential(
-                            nn.Conv2d(in_channels//16, in_channels, 1, bias=True),
-                            nn.Sigmoid())
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-
-        self.gff2 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = APAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -75,18 +65,15 @@ class dfpn8_gsfHead(nn.Module):
         self.project3 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
-        self.refine = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
+
         self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        self.localUp2=localUp(256, inter_channels, norm_layer, up_kwargs)
+
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        #gp
-        gp2 = self.gap2(c4)
-        se2 = self.se2(gp2)
-        c4 = c4+se2*c4
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -101,11 +88,12 @@ class dfpn8_gsfHead(nn.Module):
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        
+        out = self.localUp2(c1, out)
 
         #gp
-        gp = self.gap(c4)
+        gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
@@ -159,11 +147,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_dfpn8_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_fgpn8_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = dfpn8_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = fgpn8_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
@@ -210,3 +198,61 @@ class PAM_Module(nn.Module):
         out = (1-gamma)*out + gamma*x
         return out
 
+class PSPModule(nn.Module):
+    # (1, 2, 3, 6)
+    def __init__(self, sizes=(1, 3, 6, 8), dimension=2):
+        super(PSPModule, self).__init__()
+        self.stages = nn.ModuleList([self._make_stage(size, dimension) for size in sizes])
+
+    def _make_stage(self, size, dimension=2):
+        if dimension == 1:
+            prior = nn.AdaptiveAvgPool1d(output_size=size)
+        elif dimension == 2:
+            prior = nn.AdaptiveAvgPool2d(output_size=(size, size))
+        elif dimension == 3:
+            prior = nn.AdaptiveAvgPool3d(output_size=(size, size, size))
+        return prior
+
+    def forward(self, feats):
+        n, c, _, _ = feats.size()
+        priors = [stage(feats).view(n, c, -1) for stage in self.stages]
+        center = torch.cat(priors, -1)
+        return center
+    
+class APAM_Module(nn.Module):
+    """ Position attention module"""
+    #Ref from SAGAN
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer, psp_size=(1,3,6,8)):
+        super(APAM_Module, self).__init__()
+        self.chanel_in = in_dim
+        self.psp = PSPModule(psp_size)
+
+        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, x):
+        """
+            inputs :
+                x : input feature maps( B X C X H X W)
+            returns :
+                out : attention value + input feature
+                attention: B X (HxW) X (HxW)
+        """
+        xp = self.psp(x)
+        m_batchsize, C, height, width = x.size()
+        m_batchsize, C, hpwp = xp.size()
+        proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
+        proj_key = self.key_conv(xp)
+        energy = torch.bmm(proj_query, proj_key)
+        attention = self.softmax(energy)
+        proj_value = xp
+        
+        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+        out = out.view(m_batchsize, -1, height, width)
+
+        gamma = self.gamma(x)
+        out = (1-gamma)*out + gamma*x
+        return out
