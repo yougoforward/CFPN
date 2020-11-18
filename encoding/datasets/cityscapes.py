@@ -37,7 +37,7 @@ class CitySegmentation(BaseDataset):
                               -1, -1, 16, 17, 18])
         self._mapping = np.array(range(-1, len(self._key)-1)).astype('int32')    
         
-        self.colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)    
+        self.colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0, saturation=0, hue=0)    
 
         
 
