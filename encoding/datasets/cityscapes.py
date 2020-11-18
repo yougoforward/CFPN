@@ -35,7 +35,9 @@ class CitySegmentation(BaseDataset):
                               5,  -1,  6,  7,  8,  9,
                               10, 11, 12, 13, 14, 15,
                               -1, -1, 16, 17, 18])
-        self._mapping = np.array(range(-1, len(self._key)-1)).astype('int32')        
+        self._mapping = np.array(range(-1, len(self._key)-1)).astype('int32')    
+        
+        self.colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)    
 
         
 
@@ -118,10 +120,10 @@ class CitySegmentation(BaseDataset):
         y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
-        # gaussian blur as in PSP
-        if random.random() < 0.5:
-            img = img.filter(ImageFilter.GaussianBlur(
-                radius=random.random()))
+        # # gaussian blur as in PSP
+        # if random.random() < 0.5:
+        #     img = img.filter(ImageFilter.GaussianBlur(
+        #         radius=random.random()))
         # final transform
         return img, self._mask_transform(mask)
 
