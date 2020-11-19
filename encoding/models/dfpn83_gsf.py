@@ -74,9 +74,6 @@ class dfpn83_gsfHead(nn.Module):
         self.gpse = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels//2),
                                    nn.ReLU(),
-                                   nn.Conv2d(inter_channels//2, inter_channels//2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels//2),
-                                   nn.ReLU(),
                                    nn.Conv2d(inter_channels//2, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels)
                                    )
