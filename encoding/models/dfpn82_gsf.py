@@ -49,9 +49,7 @@ class dfpn82_gsfHead(nn.Module):
                             norm_layer(inter_channels),
                             nn.ReLU(True))
         self.se = nn.Sequential(
-                            nn.Conv2d(2*inter_channels, inter_channels//2, 1, bias=True),
-                            nn.ReLU(True),
-                            nn.Conv2d(inter_channels//2, inter_channels, 1, bias=True),
+                            nn.Conv2d(2*inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
@@ -98,10 +96,10 @@ class dfpn82_gsfHead(nn.Module):
         #gp
         gp = self.gap(c4)    
         # se
-        se = self.se(torch.cat([out, gp.expand_as(out)], dim=1))
-        out = out + se*out
+        # se = self.se(gp)
+        # out = out + se*out
         out = self.gff(out)
-        # out = self.relu(out + self.gpse(torch.cat([out, gp.expand_as(out)], dim=1)))
+        out = self.relu(out + self.gpse(torch.cat([out, gp.expand_as(out)], dim=1)))
         #
         # out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)

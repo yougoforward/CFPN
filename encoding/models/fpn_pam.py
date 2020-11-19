@@ -128,5 +128,5 @@ class PAM_Module(nn.Module):
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
 
-        return out+x
+        return out
 
