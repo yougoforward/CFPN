@@ -48,7 +48,7 @@ class fpn_pamHead(nn.Module):
         
         self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
-        self.pam = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//2,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.pam = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
