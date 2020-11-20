@@ -97,8 +97,8 @@ class dfpn83_gsfHead(nn.Module):
         #gp
         gp = self.gap(c4)    
         # se
-        se = self.se(gp)
-        out = out + se*out
+        # se = self.se(gp)
+        # out = out + se*out
         out = self.gpse(torch.cat([out, gp.expand_as(out)], dim=1))
         out = self.gff(out)
 
