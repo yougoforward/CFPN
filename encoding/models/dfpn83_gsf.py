@@ -67,7 +67,7 @@ class dfpn83_gsfHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(7*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -94,7 +94,7 @@ class dfpn83_gsfHead(nn.Module):
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         #gp
         gp = self.gap(c4)  
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, gp.expand_as(p2_1)], dim=1))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
         #gp
         # gp = self.gap(c4)    
@@ -103,7 +103,7 @@ class dfpn83_gsfHead(nn.Module):
         out = out + se*out
         # out = self.gpse(torch.cat([out, gp.expand_as(out)], dim=1))
         out = self.gff(out)
-
+        out = self.gpse(torch.cat([out, gp.expand_as(out)], dim=1))
         #
         # out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)
