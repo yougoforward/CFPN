@@ -92,10 +92,12 @@ class dfpn83_gsfHead(nn.Module):
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
+        #gp
+        gp = self.gap(c4)  
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8, gp.expand_as(p2_1)], dim=1))
 
         #gp
-        gp = self.gap(c4)    
+        # gp = self.gap(c4)    
         # se
         se = self.se(gp)
         out = out + se*out
