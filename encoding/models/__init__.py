@@ -21,6 +21,7 @@ from .pam import *
 from .fpn import *
 from .fpn_pam import *
 from .fpn_aspp import *
+from .fpn_psp import *
 
 
 
@@ -65,6 +66,7 @@ def get_segmentation_model(name, **kwargs):
         'fpn': get_fpn,
         'fpn_pam': get_fpn_pam,
         'fpn_aspp': get_fpn_aspp,
+        'fpn_psp': get_fpn_psp,
         
         
         'vggnet': get_vggnet,
