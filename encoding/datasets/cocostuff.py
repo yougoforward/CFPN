@@ -40,7 +40,7 @@ class CocostuffSegmentation(BaseDataset):
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
-        if self.mode == 'vis':
+        if self.mode == 'test':
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
