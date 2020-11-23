@@ -32,3 +32,11 @@ CUDA_VISIBLE_DEVICES=0 python -m experiments.segmentation.test_fps_params --data
 CUDA_VISIBLE_DEVICES=0 python -m experiments.segmentation.test_fps_params --dataset pcontext \
     --model cfpn_gsf  \
     --backbone resnet101
+
+CUDA_VISIBLE_DEVICES=0 python -m experiments.segmentation.test_fps_params --dataset pcontext \
+    --model fpn_psp  \
+    --backbone resnet101
+
+CUDA_VISIBLE_DEVICES=0 python -m experiments.segmentation.test_fps_params --dataset pcontext \
+    --model psp  --dilated \
+    --backbone resnet101 
