@@ -24,7 +24,7 @@ from .option import Options
 
 def test(args):
     # output folder
-    outdir = args.save_folder
+    outdir = args.save_folder+'_'+args.dataset
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     # data transforms
