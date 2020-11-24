@@ -22,7 +22,7 @@ def get_mask_pallete(npimg, dataset='detail'):
         out_img.putpalette(adepallete)
     elif dataset == 'cityscapes':
         out_img.putpalette(citypallete)
-    elif dataset in ('pcontext', 'pascal_voc', 'pascal_aug'):
+    elif dataset in ('pcontext', 'pascal_voc', 'pascal_aug', 'cocostuff'):
         out_img.putpalette(vocpallete)
     return out_img
 
