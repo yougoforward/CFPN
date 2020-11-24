@@ -74,7 +74,7 @@ class CocostuffSegmentation(BaseDataset):
 
     @property
     def pred_offset(self):
-        return 0
+        return 1
 
 
 def _get_cocostuff_pairs(folder, split='train'):
