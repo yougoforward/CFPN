@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['object_gsnet', 'get_object_gsnet']
+__all__ = ['object_center_gsnet', 'get_object_center_gsnet']
 
 
-class object_gsnet(BaseNet):
+class object_center_gsnet(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(object_gsnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(object_center_gsnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = object_gsnetHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = object_center_gsnetHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -31,10 +31,10 @@ class object_gsnet(BaseNet):
 
 
 
-class object_gsnetHead(nn.Module):
+class object_center_gsnetHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(object_gsnetHead, self).__init__()
+        super(object_center_gsnetHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -78,8 +78,12 @@ class object_gsnetHead(nn.Module):
                                    nn.ReLU(),
                                    )
         self.sig_pred = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
+        
+        self.center_key = nn.Conv2d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
+        self.center_query = nn.Conv1d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
+        
     def forward(self, c1,c2,c3,c4):
-        _,_, h,w = c2.size()
+        n,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -104,7 +108,16 @@ class object_gsnetHead(nn.Module):
         out = self.gff(out)
         sig_out = self.project_sig(out)
         sig_pred = self.sig_pred(torch.cat([sig_out, gp.expand_as(out)], dim=1))
-        out = self.project_soft(torch.cat([out, sig_out], dim=1))
+        
+        norm_sig_pred = torch.softmax(sig_pred.view(n,-1,h*w), dim=2) # n, cls, hw
+        cls_centers = torch.bmm(out.view(n, -1, h*w), norm_sig_pred.permute(0,2,1)) # cls nodes, n, c, cls
+        query = self.center_query(out).view(n, -1, h*w)
+        key = self.center_key(cls)
+        energy = torch.bmm(query.permute(0,2,1), key)
+        att = torch.softmax(energy, dim=-1)
+        val = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)
+        
+        out = self.project_soft(torch.cat([out, val], dim=1))
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return [self.conv6(out), sig_pred]
@@ -154,11 +167,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_object_gsnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_object_center_gsnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = object_gsnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = object_center_gsnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
