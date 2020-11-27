@@ -2,6 +2,11 @@
 # train
 python -m experiments.segmentation.train --dataset citys \
     --model cfpn_gsf --aux --base-size 1024 --crop-size 769 \
+    --backbone resnet101 --checkname cfpn_gsf_res101_citys --batch-size 8 --lr 0.001  --epochs 1
+
+# train
+python -m experiments.segmentation.train --dataset citys \
+    --model cfpn_gsf --aux --base-size 1024 --crop-size 769 \
     --backbone resnet101 --checkname cfpn_gsf_res101_citys4 --batch-size 8 --lr 0.003 --epochs 180
 
 #test [single-scale]
