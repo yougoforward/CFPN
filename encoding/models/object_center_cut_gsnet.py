@@ -79,8 +79,8 @@ class object_center_cut_gsnetHead(nn.Module):
                                    )
         self.sig_pred = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         
-        self.center_key = nn.Conv2d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
-        self.center_query = nn.Conv1d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
+        self.center_query = nn.Conv2d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
+        self.center_key = nn.Conv1d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
         
     def forward(self, c1,c2,c3,c4):
         n,_, h,w = c2.size()
