@@ -13,7 +13,7 @@ import torch
 import torch.nn as nn
 
 from torch.nn import functional as F
-from torch.nn import Module, Sequential, Conv2d, ReLU, AdaptiveAvgPool2d, BCELoss, CrossEntropyLoss
+from torch.nn import Module, Sequential, Conv2d, ReLU, AdaptiveAvgPool2d, BCELoss, CrossEntropyLoss, BCEWithLogitsLoss
 
 from torch.autograd import Variable
 from skimage.segmentation import find_boundaries
