@@ -130,7 +130,7 @@ class SegmentationLosses_objectcut(CrossEntropyLoss):
             loss_cut = sum(loss_cut)/torch.sum(valid)
             #inter class difference
             inter_error = cls_centers.unsqueeze(2).expand(n,cf,self.nclass,self.nclass)-cls_centers.unsqueeze(3).expand(n,cf,self.nclass,self.nclass)
-            loss_cut = loss_cut + torch.sum(torch.norm(inter_error, p='fro', dim=1, keepdim=False))/(self.nclass*(self.nclass-1))
+            loss_cut = loss_cut - torch.sum(torch.norm(inter_error, p='fro', dim=1, keepdim=False))/(self.nclass*(self.nclass-1))
                       
             return loss1 + self.aux_weight*loss2 + self.aux_weight * loss3 + self.aux_weight * loss_cut
         
