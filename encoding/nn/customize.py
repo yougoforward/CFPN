@@ -107,7 +107,7 @@ class SegmentationLosses_objectcut(CrossEntropyLoss):
         elif not self.se_loss:
             # *preds, target = tuple(inputs)
             # pred1, pred2, pred3 = tuple(preds[0])
-            pred1, pred2, cls_centers, feats, pred3, target = tuple(inputs)
+            pred1, pred2, feats, cls_centers, pred3, target = tuple(inputs)
             loss1 = super(SegmentationLosses_objectcut, self).forward(pred1, target)
             valid = (target!=self.ignore_index).unsqueeze(1)
             target_cp = target.clone()

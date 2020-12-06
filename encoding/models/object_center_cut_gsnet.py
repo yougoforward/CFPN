@@ -22,7 +22,7 @@ class object_center_cut_gsnet(BaseNet):
         imsize = x.size()[2:]
         c1, c2, c3, c4 = self.base_forward(x)
         outputs = self.head(c1,c2,c3,c4)
-        outputs = [F.interpolate(x, imsize, **self._up_kwargs) for x in outputs]
+        outputs = [F.interpolate(outputs[i], imsize, **self._up_kwargs) for i in range(3)].append(outputs[3])
         if self.aux:
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
@@ -120,7 +120,7 @@ class object_center_cut_gsnetHead(nn.Module):
         out = self.project_soft(torch.cat([gff_out, val], dim=1))
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-        return [self.conv6(out), sig_pred, cls_centers, gff_out]
+        return [self.conv6(out), sig_pred, gff_out, cls_centers]
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
