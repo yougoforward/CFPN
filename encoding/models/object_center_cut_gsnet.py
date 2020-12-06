@@ -22,8 +22,10 @@ class object_center_cut_gsnet(BaseNet):
         imsize = x.size()[2:]
         c1, c2, c3, c4 = self.base_forward(x)
         outputs = self.head(c1,c2,c3,c4)
+        feats = outputs[2]
         cls_centers = outputs[3]
-        outputs = [F.interpolate(outputs[i], imsize, **self._up_kwargs) for i in range(3)]
+        outputs = [F.interpolate(outputs[i], imsize, **self._up_kwargs) for i in range(2)]
+        outputs.append(feats)
         outputs.append(cls_centers)
         if self.aux:
             auxout = self.auxlayer(c3)
