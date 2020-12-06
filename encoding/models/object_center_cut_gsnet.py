@@ -111,13 +111,14 @@ class object_center_cut_gsnetHead(nn.Module):
         
         norm_sig_pred = torch.softmax(sig_pred.view(n,-1,h*w), dim=2) # n, cls, hw
         cls_centers = torch.bmm(gff_out.view(n, -1, h*w), norm_sig_pred.permute(0,2,1)) # cls nodes, n, c, cls
-        query = self.center_query(gff_out).view(n, -1, h*w)
-        key = self.center_key(cls_centers)
-        energy = torch.bmm(query.permute(0,2,1), key)
-        att = torch.softmax(energy, dim=-1)
-        val = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)
+        # query = self.center_query(gff_out).view(n, -1, h*w)
+        # key = self.center_key(cls_centers)
+        # energy = torch.bmm(query.permute(0,2,1), key)
+        # att = torch.softmax(energy, dim=-1)
+        # val = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)
         
-        out = self.project_soft(torch.cat([gff_out, val], dim=1))
+        # out = self.project_soft(torch.cat([gff_out, val], dim=1))
+        out = gff_out
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return [self.conv6(out), sig_pred, gff_out, cls_centers]
