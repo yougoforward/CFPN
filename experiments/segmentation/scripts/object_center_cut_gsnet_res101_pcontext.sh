@@ -1,6 +1,6 @@
 # !/usr/bin/env bash
 # train
-python -m experiments.segmentation.train_object --dataset pcontext \
+python -m experiments.segmentation.train_objectcut --dataset pcontext \
     --model object_center_cut_gsnet --aux --base-size 520 --crop-size 520 \
     --backbone resnet101 --checkname object_center_cut_gsnet_res101_pcontext
 
