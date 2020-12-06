@@ -123,7 +123,7 @@ class SegmentationLosses_objectcut(CrossEntropyLoss):
             # intra class difference
             for i in range(self.nclass):
                 print(feats.size())
-                print(cls_centers[i].size())
+                print(center_list[i].size())
                 intra_error = feats-center_list[i]
                 norm_error = torch.norm(intra_error, p='fro', dim=1, keepdim=True)
                 norm_error = F.interpolate(norm_error, (h,w), mode='bilinear', align_corner=True)
