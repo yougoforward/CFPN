@@ -25,6 +25,7 @@ from .fpn_psp import *
 from .object_gsnet import *
 from .object_center_gsnet import *
 from .object_center_cut_gsnet import *
+from .obj_gsnet import *
 
 from .vggnet import *
 from .vgg_spool import *
@@ -72,6 +73,7 @@ def get_segmentation_model(name, **kwargs):
         'object_gsnet': get_object_gsnet,
         'object_center_gsnet': get_object_center_gsnet,
         'object_center_cut_gsnet': get_object_center_cut_gsnet,
+        'obj_gsnet': get_obj_gsnet,
         
         
         'vggnet': get_vggnet,
