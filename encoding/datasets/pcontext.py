@@ -46,7 +46,7 @@ class ContextSegmentation(BaseDataset):
             self.masks = torch.load(mask_file)
         else:
             self.masks = self._preprocess(mask_file)
-        self.label_relax = RelaxedBoundaryLossToTensor(ignore_id=-1, num_classes=NUM_CLASS)
+        self.label_relax = RelaxedBoundaryLossToTensor(ignore_id=-1, num_classes=59)
     def _class_to_index(self, mask):
         # assert the values
         values = np.unique(mask)
