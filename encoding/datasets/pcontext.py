@@ -3,8 +3,6 @@
 # Email: zhang.hang@rutgers.edu
 # Copyright (c) 2017
 ###########################################################################
-from .label_relax_transforms import RelaxedBoundaryLossToTensor
-
 import os
 import numpy as np
 
@@ -46,7 +44,6 @@ class ContextSegmentation(BaseDataset):
             self.masks = torch.load(mask_file)
         else:
             self.masks = self._preprocess(mask_file)
-        self.label_relax = RelaxedBoundaryLossToTensor(ignore_id=-1, num_classes=59)
     def _class_to_index(self, mask):
         # assert the values
         values = np.unique(mask)
@@ -97,7 +94,6 @@ class ContextSegmentation(BaseDataset):
 
     def _mask_transform(self, mask):
         target = np.array(mask).astype('int32') - 1
-        target = self.label_relax(target)
         return torch.from_numpy(target).long()
 
     def __len__(self):

@@ -257,20 +257,15 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
         self.nclass = nclass
         self.se_weight = se_weight
         self.aux_weight = aux_weight
-        self.bceloss = BCELoss(weight, reduction=reduction)
-        self.gamma = 2.0
-        self.alpha = 1.0
-        self.label_relax = RelaxedBoundaryLossToTensor(ignore_id=ignore_index, num_classes=nclass)
-        self.label_relax_loss = ImgWtLossSoftNLL(classes=nclass, ignore_index=ignore_index, weights=None, upper_bound=1.0,
-                                                 norm=False)
+        
     def forward(self, *inputs):
         if not self.se_loss and not self.aux:
             return super(SegmentationLosses_BoundaryRelax, self).forward(*inputs)
         elif not self.se_loss:
             pred1, pred2, target = tuple(inputs)
             # label relax loss
-            loss1 = self.label_relax_loss(pred1, target)
-            loss2 = self.label_relax_loss(pred2, target)
+            loss1 = super(SegmentationLosses_BoundaryRelax, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
             return loss1 + self.aux_weight * loss2
         
     
