@@ -23,7 +23,7 @@ from .BoundaryLabelRelaxationLoss import ImgWtLossSoftNLL
 
 torch_ver = torch.__version__[:3]
 
-__all__ = ['SegmentationLosses', 'SegmentationLosses_contour', 'SegmentationLosses_contour_BoundaryRelax', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_object', 'SegmentationLosses_objectcut']
+__all__ = ['SegmentationLosses', 'SegmentationLosses_contour', 'SegmentationLosses_contour_BoundaryRelax', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_object', 'SegmentationLosses_objectcut', 'SegmentationLosses_BoundaryRelax']
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma=0, alpha=None, size_average=True):
