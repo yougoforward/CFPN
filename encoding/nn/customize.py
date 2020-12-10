@@ -246,6 +246,37 @@ class SegmentationLosses_contour(CrossEntropyLoss):
         tvect[target==ignore_index]=ignore_index
         return tvect
 
+class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
+    """2D Cross Entropy Loss with Auxilary Loss"""
+    def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
+                 aux=False, aux_weight=0.4, weight=None,
+                 size_average=True, ignore_index=-1, reduction='mean'):
+        super(SegmentationLosses_BoundaryRelax, self).__init__(weight, ignore_index=ignore_index, reduction=reduction)
+        self.se_loss = se_loss
+        self.aux = aux
+        self.nclass = nclass
+        self.se_weight = se_weight
+        self.aux_weight = aux_weight
+        self.bceloss = BCELoss(weight, reduction=reduction)
+        self.gamma = 2.0
+        self.alpha = 1.0
+        self.label_relax = RelaxedBoundaryLossToTensor(ignore_id=ignore_index, num_classes=nclass)
+        self.label_relax_loss = ImgWtLossSoftNLL(classes=nclass, ignore_index=ignore_index, weights=None, upper_bound=1.0,
+                                                 norm=False)
+    def forward(self, *inputs):
+        if not self.se_loss and not self.aux:
+            return super(SegmentationLosses_BoundaryRelax, self).forward(*inputs)
+        elif not self.se_loss:
+            pred1, pred2, target = tuple(inputs)
+            target_relax = target.cpu().data.numpy()
+            target_relax = self.label_relax(target_relax)
+            target_relax = torch.from_numpy(target_relax).type_as(pred1)
+            # label relax loss
+            loss1 = self.label_relax_loss(pred1, target_relax)
+            loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
+            return loss1 + self.aux_weight * loss2
+        
+    
 class SegmentationLosses_contour_BoundaryRelax(CrossEntropyLoss):
     """2D Cross Entropy Loss with Auxilary Loss"""
     def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
