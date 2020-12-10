@@ -22,7 +22,7 @@ class obj_gsnet(BaseNet):
         imsize = x.size()[2:]
         c1, c2, c3, c4 = self.base_forward(x)
         outputs = self.head(c1,c2,c3,c4)
-        outputs = [F.interpolate(x, imsize, **self._up_kwargs) for x in outputs]
+        outputs = [F.interpolate(outputs, imsize, **self._up_kwargs)]
         if self.aux:
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
