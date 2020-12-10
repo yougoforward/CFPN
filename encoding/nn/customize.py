@@ -268,12 +268,9 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             return super(SegmentationLosses_BoundaryRelax, self).forward(*inputs)
         elif not self.se_loss:
             pred1, pred2, target = tuple(inputs)
-            target_relax = target.cpu().data.numpy()
-            target_relax = self.label_relax(target_relax)
-            target_relax = torch.from_numpy(target_relax).type_as(pred1)
             # label relax loss
-            loss1 = self.label_relax_loss(pred1, target_relax)
-            loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
+            loss1 = self.label_relax_loss(pred1, target)
+            loss2 = self.label_relax_loss(pred2, target)
             return loss1 + self.aux_weight * loss2
         
     
