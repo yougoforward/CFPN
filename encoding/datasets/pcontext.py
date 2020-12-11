@@ -102,6 +102,8 @@ class ContextSegmentation(BaseDataset):
         for i in range(0,border*2+1):
             for j in range(0, border*2+1):
                 label += onehot_label[i:i+h, j:j+w, :]
+        label[label>1] = 1
+        label = label[:,:,:self.NUM_CLASS]
         sum_label = torch.sum(label, dim=2, keepdim=False)
         mask[sum_label>1]=-1
         # onehot_label = onehot_label.permute(2, 0, 1)
