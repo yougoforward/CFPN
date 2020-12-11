@@ -101,7 +101,7 @@ class ContextSegmentation(BaseDataset):
         for i in range(-border,border+1):
             for j in range(-border, border+1):
                 shifted= shift(np_mask,(i,j), cval=self.NUM_CLASS)
-                onehot_label += torch.nn.functional.one_hot(torch.from_numpy(shifted), num_classes=self.NUM_CLASS+1)       
+                onehot_label += torch.nn.functional.one_hot(torch.from_numpy(shifted).long(), num_classes=self.NUM_CLASS+1)       
         
         onehot_label[onehot_label>1] = 1
         onehot_label = onehot_label[:,:,:self.NUM_CLASS]
