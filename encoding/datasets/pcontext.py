@@ -94,7 +94,7 @@ class ContextSegmentation(BaseDataset):
             
         onehot_mask = mask.clone()
         onehot_mask[onehot_mask == -1] = self.NUM_CLASS
-        border = 1
+        border = 2
         onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.NUM_CLASS)
         onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.NUM_CLASS+1)
         h,w = mask.size()
