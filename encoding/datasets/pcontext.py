@@ -12,6 +12,7 @@ from PIL import Image
 from tqdm import trange
 
 from .base import BaseDataset
+from scipy.ndimage.interpolation import shift
 
 class ContextSegmentation(BaseDataset):
     BASE_DIR = 'VOCdevkit/VOC2010'
@@ -90,6 +91,23 @@ class ContextSegmentation(BaseDataset):
             img = self.transform(img)
         if self.target_transform is not None:
             mask = self.target_transform(mask)
+            
+        onehot_mask = mask.clone()
+        onehot_mask[onehot_mask == -1] = self.NUM_CLASS
+        onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.NUM_CLASS+1)
+        # onehot_label = onehot_label.permute(2, 0, 1)
+        border = 1
+        np_mask = np.array(onehot_mask).astype('int32')
+        for i in range(-border,border+1):
+            for j in range(-border, border+1):
+                shifted= shift(np_mask,(i,j), cval=self.NUM_CLASS)
+                onehot_label += torch.nn.functional.one_hot(torch.from_numpy(shifted), num_classes=self.NUM_CLASS+1)       
+        
+        onehot_label[onehot_label>1] = 1
+        onehot_label = onehot_label[:,:,:self.NUM_CLASS]
+        sum_label = torch.sum(onehot_label, dim=2, keepdim=False)
+        mask[sum_label>1]=-1
+        
         return img, mask
 
     def _mask_transform(self, mask):
