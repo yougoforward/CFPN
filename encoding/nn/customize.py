@@ -263,6 +263,21 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             return super(SegmentationLosses_BoundaryRelax, self).forward(*inputs)
         elif not self.se_loss:
             pred1, pred2, target = tuple(inputs)
+            onehot_mask = target.clone()
+            onehot_mask[onehot_mask == self.ignore_index] = self.nclass
+            border = 2
+            onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.nclass)
+            onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.nclass+1)
+            n,h,w = target.size()
+            label = torch.zeros((n,h,w, self.nclass+1))
+            for i in range(0,border*2+1):
+                for j in range(0, border*2+1):
+                    label += onehot_label[i:i+h, j:j+w, :]
+            label[label>1] = 1
+            label = label[:,:,:self.nclass]
+            sum_label = torch.sum(label, dim=-1, keepdim=False)
+            target[sum_label>1]=self.ignore_index
+        
             # label relax loss
             loss1 = super(SegmentationLosses_BoundaryRelax, self).forward(pred1, target)
             loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
