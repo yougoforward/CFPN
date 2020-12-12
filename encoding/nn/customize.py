@@ -289,7 +289,6 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             logits = logits*br_target
             logits = torch.sum(logits, dim=1, keepdim=False)
             log_logits = torch.log(logits)
-            
             loss1 = torch.mean(-log_logits[valid])
             
             logits = torch.softmax(pred2)
