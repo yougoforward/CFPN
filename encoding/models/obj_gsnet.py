@@ -69,7 +69,7 @@ class obj_gsnetHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.sig_pred = nn.Sequential(nn.Conv2d(2*inter_channels, 4*out_channels, 1))
+        self.sig_pred = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
         
         self.center_query = nn.Conv2d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
         self.center_key = nn.Conv1d(inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=True)
@@ -98,16 +98,16 @@ class obj_gsnetHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-        sig_pred = self.sig_pred(torch.cat([out, gp.expand_as(out)], dim=1))
+        sig_pred = self.sig_pred(out)
         
-        norm_sig_pred = torch.softmax(sig_pred.view(n,-1,h*w), dim=2) # n, cls, hw
+        norm_sig_pred = torch.sigmoid(sig_pred.view(n,-1,h*w).detach()) # n, cls, hw
+        norm_sig_pred = norm_sig_pred/torch.sum(norm_sig_pred, dim=2, keepdim=True)
         cls_centers = torch.bmm(out.view(n, -1, h*w), norm_sig_pred.permute(0,2,1)) # cls nodes, n, c, cls
         query = self.center_query(out).view(n, -1, h*w)
         key = self.center_key(cls_centers)
         energy = torch.bmm(query.permute(0,2,1), key)
         att = torch.softmax(energy, dim=-1)
-        out = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)
-        
+        out = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)   
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)
