@@ -23,7 +23,7 @@ from .BoundaryLabelRelaxationLoss import ImgWtLossSoftNLL
 
 torch_ver = torch.__version__[:3]
 
-__all__ = ['SegmentationLosses', 'SegmentationLosses_contour', 'SegmentationLosses_contour_BoundaryRelax', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_object', 'SegmentationLosses_objectcut', 'SegmentationLosses_BoundaryRelax']
+__all__ = ['SegmentationLosses', 'SegmentationLosses_contour', 'SegmentationLosses_contour_BoundaryRelax', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_object', 'SegmentationLosses_objectcut', 'SegmentationLosses_BoundaryRelax'，'SegmentationLosses_BoundaryRelax3'，'SegmentationLosses_BoundaryRelax5']
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma=0, alpha=None, size_average=True):
@@ -283,7 +283,80 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
             return loss1 + self.aux_weight * loss2
         
-    
+class SegmentationLosses_BoundaryRelax3(CrossEntropyLoss):
+    """2D Cross Entropy Loss with Auxilary Loss"""
+    def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
+                 aux=False, aux_weight=0.4, weight=None,
+                 size_average=True, ignore_index=-1, reduction='mean'):
+        super(SegmentationLosses_BoundaryRelax3, self).__init__(weight, ignore_index=ignore_index, reduction=reduction)
+        self.se_loss = se_loss
+        self.aux = aux
+        self.nclass = nclass
+        self.se_weight = se_weight
+        self.aux_weight = aux_weight
+        
+    def forward(self, *inputs):
+        if not self.se_loss and not self.aux:
+            return super(SegmentationLosses_BoundaryRelax3, self).forward(*inputs)
+        elif not self.se_loss:
+            pred1, pred2, target = tuple(inputs)
+            onehot_mask = target.clone()
+            onehot_mask[onehot_mask == self.ignore_index] = self.nclass
+            border = 1
+            onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.nclass)
+            onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.nclass+1)
+            n,h,w = target.size()
+            label = torch.zeros((n,h,w, self.nclass+1)).to(target.device)
+            for i in range(0,border*2+1):
+                for j in range(0, border*2+1):
+                    label += onehot_label[:,i:i+h, j:j+w, :]
+            label[label>1] = 1
+            label = label[:,:,:,:self.nclass]
+            sum_label = torch.sum(label, dim=-1, keepdim=False)
+            target[sum_label>1]=self.ignore_index
+        
+            # label relax loss
+            loss1 = super(SegmentationLosses_BoundaryRelax3, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses_BoundaryRelax3, self).forward(pred2, target)
+            return loss1 + self.aux_weight * loss2
+
+class SegmentationLosses_BoundaryRelax5(CrossEntropyLoss):
+    """2D Cross Entropy Loss with Auxilary Loss"""
+    def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
+                 aux=False, aux_weight=0.4, weight=None,
+                 size_average=True, ignore_index=-1, reduction='mean'):
+        super(SegmentationLosses_BoundaryRelax5, self).__init__(weight, ignore_index=ignore_index, reduction=reduction)
+        self.se_loss = se_loss
+        self.aux = aux
+        self.nclass = nclass
+        self.se_weight = se_weight
+        self.aux_weight = aux_weight
+        
+    def forward(self, *inputs):
+        if not self.se_loss and not self.aux:
+            return super(SegmentationLosses_BoundaryRelax5, self).forward(*inputs)
+        elif not self.se_loss:
+            pred1, pred2, target = tuple(inputs)
+            onehot_mask = target.clone()
+            onehot_mask[onehot_mask == self.ignore_index] = self.nclass
+            border = 2
+            onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.nclass)
+            onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.nclass+1)
+            n,h,w = target.size()
+            label = torch.zeros((n,h,w, self.nclass+1)).to(target.device)
+            for i in range(0,border*2+1):
+                for j in range(0, border*2+1):
+                    label += onehot_label[:,i:i+h, j:j+w, :]
+            label[label>1] = 1
+            label = label[:,:,:,:self.nclass]
+            sum_label = torch.sum(label, dim=-1, keepdim=False)
+            target[sum_label>1]=self.ignore_index
+        
+            # label relax loss
+            loss1 = super(SegmentationLosses_BoundaryRelax5, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses_BoundaryRelax5, self).forward(pred2, target)
+            return loss1 + self.aux_weight * loss2
+        
 class SegmentationLosses_contour_BoundaryRelax(CrossEntropyLoss):
     """2D Cross Entropy Loss with Auxilary Loss"""
     def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
