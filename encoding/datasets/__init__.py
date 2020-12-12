@@ -6,6 +6,8 @@ from .pascal_aug import VOCAugSegmentation
 from .pcontext import ContextSegmentation
 from .cityscapes import CitySegmentation
 from .cocostuff import CocostuffSegmentation
+from .pcontext3 import ContextSegmentation3
+from .pcontext5 import ContextSegmentation5
 
 datasets = {
     'coco': COCOSegmentation,
@@ -15,6 +17,8 @@ datasets = {
     'pcontext': ContextSegmentation,
     'citys': CitySegmentation,
     'cocostuff': CocostuffSegmentation,
+    'pcontext3': ContextSegmentation3,
+    'pcontext5': ContextSegmentation5,
 }
 
 def get_segmentation_dataset(name, **kwargs):
