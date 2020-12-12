@@ -8,7 +8,7 @@ from .cityscapes import CitySegmentation
 from .cocostuff import CocostuffSegmentation
 from .pcontext3 import ContextSegmentation3
 from .pcontext5 import ContextSegmentation5
-
+from .pcontext_br import ContextSegmentation_br
 datasets = {
     'coco': COCOSegmentation,
     'ade20k': ADE20KSegmentation,
@@ -19,6 +19,7 @@ datasets = {
     'cocostuff': CocostuffSegmentation,
     'pcontext3': ContextSegmentation3,
     'pcontext5': ContextSegmentation5,
+    'pcontext_br': ContextSegmentation_br,
 }
 
 def get_segmentation_dataset(name, **kwargs):

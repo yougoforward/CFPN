@@ -103,6 +103,7 @@ class Options():
                 'cocostuff': 180,
                 'pcontext3': 80,
                 'pcontext5': 80,
+                'pcontext_br': 80,
             }
             args.epochs = epoches[args.dataset.lower()]
         if args.batch_size is None:
@@ -120,6 +121,7 @@ class Options():
                 'cocostuff': 0.001,
                 'pcontext3': 0.001,
                 'pcontext5': 0.001,
+                'pcontext_br': 0.001,
             }
             args.lr = lrs[args.dataset.lower()] / 16 * args.batch_size
         print(args)

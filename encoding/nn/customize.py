@@ -263,24 +263,43 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             return super(SegmentationLosses_BoundaryRelax, self).forward(*inputs)
         elif not self.se_loss:
             pred1, pred2, target = tuple(inputs)
-            onehot_mask = target.clone()
-            onehot_mask[onehot_mask == self.ignore_index] = self.nclass
-            border = 2
-            onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.nclass)
-            onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.nclass+1)
-            n,h,w = target.size()
-            label = torch.zeros((n,h,w, self.nclass+1)).to(target.device)
-            for i in range(0,border*2+1):
-                for j in range(0, border*2+1):
-                    label += onehot_label[:,i:i+h, j:j+w, :]
-            label[label>1] = 1
-            label = label[:,:,:,:self.nclass]
-            sum_label = torch.sum(label, dim=-1, keepdim=False)
-            target[sum_label>1]=self.ignore_index
+            # onehot_mask = target.clone()
+            # onehot_mask[onehot_mask == self.ignore_index] = self.nclass
+            # border = 2
+            # onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.nclass)
+            # onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.nclass+1)
+            # n,h,w = target.size()
+            # label = torch.zeros((n,h,w, self.nclass+1)).to(target.device)
+            # for i in range(0,border*2+1):
+            #     for j in range(0, border*2+1):
+            #         label += onehot_label[:,i:i+h, j:j+w, :]
+            # label[label>1] = 1
+            # label = label[:,:,:,:self.nclass]
+            # sum_label = torch.sum(label, dim=-1, keepdim=False)
+            # target[sum_label>1]=self.ignore_index
+            
+            targets = torch.split(target, self.nclass, dim=1)
+            br_target = targets[0]
+            ori_target = targets[1]
+            valid = (ori_target!=self.ignore_index)
+                     
+            logits = torch.softmax(pred1)
+            logits = logits*br_target
+            logits = torch.sum(logits, dim=1, keepdim=False)
+            log_logits = torch.log(logits)
+            
+            loss1 = torch.mean(-log_logits[valid])
+            
+            logits = torch.softmax(pred2)
+            logits = logits*br_target
+            logits = torch.sum(logits, dim=1, keepdim=False)
+            log_logits = torch.log(logits)
+            loss2 = torch.mean(-log_logits[valid])
+            
         
             # label relax loss
-            loss1 = super(SegmentationLosses_BoundaryRelax, self).forward(pred1, target)
-            loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
+            # loss1 = super(SegmentationLosses_BoundaryRelax, self).forward(pred1, target)
+            # loss2 = super(SegmentationLosses_BoundaryRelax, self).forward(pred2, target)
             return loss1 + self.aux_weight * loss2
         
 class SegmentationLosses_BoundaryRelax3(CrossEntropyLoss):
