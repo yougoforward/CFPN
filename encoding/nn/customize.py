@@ -274,7 +274,7 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
                 for j in range(0, border*2+1):
                     label += onehot_label[:,i:i+h, j:j+w, :]
             label[label>1] = 1
-            label = label[:,:,:self.nclass]
+            label = label[:,:,:,:self.nclass]
             sum_label = torch.sum(label, dim=-1, keepdim=False)
             target[sum_label>1]=self.ignore_index
         
