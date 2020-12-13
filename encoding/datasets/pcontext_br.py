@@ -106,7 +106,7 @@ class ContextSegmentation_br(BaseDataset):
         # label = label[:,:,:self.NUM_CLASS]
         # sum_label = torch.sum(label, dim=2, keepdim=False)
         # mask[sum_label>1]=-1
-        label[:,:,:self.NUM_CLASS]=mask
+        label[:,:,self.NUM_CLASS]=mask
         mask = label.permute(2,0,1)
         
         # onehot_label = onehot_label.permute(2, 0, 1)
