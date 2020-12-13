@@ -95,29 +95,26 @@ class ContextSegmentation3(BaseDataset):
         onehot_mask = mask.clone()
         onehot_mask[onehot_mask == -1] = self.NUM_CLASS
         border = 1
-        # onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.NUM_CLASS)
+        onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.NUM_CLASS)
         onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.NUM_CLASS+1)
-        # h,w = mask.size()
-        # label = torch.zeros((h,w, self.NUM_CLASS+1))
-        # for i in range(0,border*2+1):
-        #     for j in range(0, border*2+1):
-        #         label += onehot_label[i:i+h, j:j+w, :]
-        # label[label>1] = 1
-        # label = label[:,:,:self.NUM_CLASS]
-        # sum_label = torch.sum(label, dim=2, keepdim=False)
-        # mask[sum_label>1]=-1
+        h,w = mask.size()
+        label = torch.zeros((h,w, self.NUM_CLASS+1))
+        for i in range(0,border*2+1):
+            for j in range(0, border*2+1):
+                label += onehot_label[i:i+h, j:j+w, :]
+        label[label>1] = 1
+        label = label[:,:,:self.NUM_CLASS]
+        sum_label = torch.sum(label, dim=2, keepdim=False)
         
-        # onehot_label = onehot_label.permute(2, 0, 1)
+        # np_mask = np.array(onehot_mask).astype('int32')
+        # for i in range(-border,border+1):
+        #     for j in range(-border, border+1):
+        #         shifted= shift(np_mask,(i,j), cval=self.NUM_CLASS)
+        #         onehot_label += torch.nn.functional.one_hot(torch.from_numpy(shifted).long(), num_classes=self.NUM_CLASS+1)       
         
-        np_mask = np.array(onehot_mask).astype('int32')
-        for i in range(-border,border+1):
-            for j in range(-border, border+1):
-                shifted= shift(np_mask,(i,j), cval=self.NUM_CLASS)
-                onehot_label += torch.nn.functional.one_hot(torch.from_numpy(shifted).long(), num_classes=self.NUM_CLASS+1)       
-        
-        onehot_label[onehot_label>1] = 1
-        onehot_label = onehot_label[:,:,:self.NUM_CLASS]
-        sum_label = torch.sum(onehot_label, dim=2, keepdim=False)
+        # onehot_label[onehot_label>1] = 1
+        # onehot_label = onehot_label[:,:,:self.NUM_CLASS]
+        # sum_label = torch.sum(onehot_label, dim=2, keepdim=False)
         
         br_mask = mask.clone()
         br_mask[sum_label>1]=-1
