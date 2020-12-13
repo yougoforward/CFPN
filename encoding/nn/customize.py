@@ -281,8 +281,8 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             targets = torch.split(target, self.nclass, dim=1)
             br_target = targets[0]
             ori_target = targets[1]
-            br_target = label.permute(0,3,1,2).float()
-            ori_target = target
+            # br_target = label.permute(0,3,1,2).float()
+            # ori_target = target
             valid = (ori_target!=self.ignore_index)
                      
             logits = torch.softmax(pred1, dim=1)
