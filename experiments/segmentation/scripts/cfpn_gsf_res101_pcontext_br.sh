@@ -1,6 +1,6 @@
 # !/usr/bin/env bash
 # train
-python -m experiments.segmentation.train_br --dataset pcontext \
+python -m experiments.segmentation.train_br --dataset pcontext_br \
     --model cfpn_gsf --aux --base-size 520 --crop-size 520 \
     --backbone resnet101 --checkname cfpn_gsf_res101_pcontext_br
 
