@@ -85,7 +85,7 @@ class SegmentationLosses_object(CrossEntropyLoss):
             onehot_label = F.one_hot(target_cp, num_classes =self.nclass).float()
             loss2 = self.bce(pred2[valid.expand(n,c,h,w)], onehot_label.permute(0,3,1,2)[valid.expand(n,c,h,w)])
             loss3 = super(SegmentationLosses_object, self).forward(pred3, target)
-            return loss1 + loss2 + self.aux_weight * loss3
+            return loss1 + self.aux_weight*loss2 + self.aux_weight * loss3
 
 class SegmentationLosses_objectcut(CrossEntropyLoss):
     """2D Cross Entropy Loss with Auxilary Loss"""
