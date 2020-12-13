@@ -335,6 +335,10 @@ class SegmentationLosses_BoundaryRelax3(CrossEntropyLoss):
             # sum_label = torch.sum(label, dim=-1, keepdim=False)
             # target[sum_label>1]=self.ignore_index
         
+        
+            targets = torch.split(target, 1, dim=1)
+            target = targets[0].squeeze(1)
+            ori_target = targets[1].squeeze(1)
             # label relax loss
             loss1 = super(SegmentationLosses_BoundaryRelax3, self).forward(pred1, target)
             loss2 = super(SegmentationLosses_BoundaryRelax3, self).forward(pred2, target)

@@ -118,7 +118,11 @@ class ContextSegmentation3(BaseDataset):
         onehot_label[onehot_label>1] = 1
         onehot_label = onehot_label[:,:,:self.NUM_CLASS]
         sum_label = torch.sum(onehot_label, dim=2, keepdim=False)
-        mask[sum_label>1]=-1
+        
+        br_mask = mask.clone()
+        br_mask[sum_label>1]=-1
+        
+        mask = torch.stack([br_mask, mask], dim=0)
         
         return img, mask
 
