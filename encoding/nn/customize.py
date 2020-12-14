@@ -269,7 +269,7 @@ class SegmentationLosses_BoundaryRelax(CrossEntropyLoss):
             onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.nclass)
             onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.nclass+1)
             n,h,w = target.size()
-            label = torch.zeros((n,h,w, self.nclass+1)).to(target.device
+            label = torch.zeros((n,h,w, self.nclass+1)).to(target.device)
             for i in range(0,border*2+1):
                 for j in range(0, border*2+1):
                     label += onehot_label[:,i:i+h, j:j+w, :]
