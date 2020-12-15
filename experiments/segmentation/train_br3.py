@@ -143,8 +143,8 @@ class Trainer():
         total_inter, total_union, total_correct, total_label = 0, 0, 0, 0
         tbar = tqdm(self.valloader, desc='\r')
         for i, (image, target) in enumerate(tbar):
-            # targets = torch.split(target, 1, dim=1)
-            # target = targets[1].squeeze(1)
+            targets = torch.split(target, 1, dim=1)
+            target = targets[1].squeeze(1)
             if torch_ver == "0.3":
                 image = Variable(image, volatile=True)
                 correct, labeled, inter, union = eval_batch(self.model, image, target)
