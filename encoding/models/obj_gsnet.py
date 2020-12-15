@@ -98,7 +98,7 @@ class obj_gsnetHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-        norm_sig_pred = torch.softmax(self.conv6(torch.cat([out, gp.expand_as(out)], dim=1)), dim=1)
+        norm_sig_pred = torch.softmax(self.conv6(torch.cat([out, gp.expand_as(out)], dim=1)), dim=1).view(n,-1,h*w)
         
         # sig_pred = self.sig_pred(out)
         
