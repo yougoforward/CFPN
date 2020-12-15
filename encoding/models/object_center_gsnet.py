@@ -116,7 +116,8 @@ class object_center_gsnetHead(nn.Module):
         key = self.center_key(cls_centers)
         energy = torch.bmm(query.permute(0,2,1), key)
         att = torch.softmax(energy, dim=-1)
-        out = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)
+        center_out = torch.bmm(cls_centers, att.permute(0,2,1)).view(n,-1,h,w)
+        out = self.project_soft(torch.cat([out, center_out], dim=1))
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return [self.conv6(out), sig_pred]
