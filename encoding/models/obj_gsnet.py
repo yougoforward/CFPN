@@ -98,9 +98,11 @@ class obj_gsnetHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-        sig_pred = self.sig_pred(out)
+        norm_sig_pred = torch.softmax(self.conv6(torch.cat([out, gp.expand_as(out)], dim=1)), dim=1)
         
-        norm_sig_pred = torch.sigmoid(sig_pred.view(n,-1,h*w).detach()) # n, cls, hw
+        # sig_pred = self.sig_pred(out)
+        
+        # norm_sig_pred = torch.sigmoid(sig_pred.view(n,-1,h*w).detach()) # n, cls, hw
         norm_sig_pred = norm_sig_pred/torch.sum(norm_sig_pred, dim=2, keepdim=True)
         cls_centers = torch.bmm(out.view(n, -1, h*w), norm_sig_pred.permute(0,2,1)) # cls nodes, n, c, cls
         query = self.center_query(out).view(n, -1, h*w)
