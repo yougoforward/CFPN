@@ -96,7 +96,7 @@ class ContextSegmentation3(BaseDataset):
         onehot_mask[onehot_mask == -1] = self.NUM_CLASS
         border = 1
         # onehot_mask = torch.nn.functional.pad(onehot_mask, (border, border, border, border), 'constant', self.NUM_CLASS)
-        # onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.NUM_CLASS+1)
+        onehot_label = torch.nn.functional.one_hot(onehot_mask, num_classes=self.NUM_CLASS+1)
         # h,w = mask.size()
         # label = torch.zeros((h,w, self.NUM_CLASS+1))
         # for i in range(0,border*2+1):
