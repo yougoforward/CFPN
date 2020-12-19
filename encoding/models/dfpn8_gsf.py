@@ -82,7 +82,7 @@ class dfpn8_gsfHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.project012 = nn.Sequential(nn.Conv2d(256+64, 256, 3, padding=1, dilation=1, bias=False),
+        self.project012 = nn.Sequential(nn.Conv2d(256+64, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU()
                                    )
