@@ -131,10 +131,11 @@ class dfpn8_gsfHead(nn.Module):
         edge2 = F.interpolate(sig0, (h,w), **self._up_kwargs)
         
         
-        out = F.interpolate(out*(1-edge2), (h1,w1), **self._up_kwargs)+edge2*F.interpolate(out, (h1,w1), **self._up_kwargs)
-        out = F.interpolate(out*(1-edge1), (h0,w0), **self._up_kwargs)+edge1*F.interpolate(out, (h0,w0), **self._up_kwargs)
+        out = F.interpolate(out*(1-edge2), (h1,w1), **self._up_kwargs)+edge1*F.interpolate(out, (h1,w1), **self._up_kwargs)
+        out = F.interpolate(out*(1-edge1), (h0,w0), **self._up_kwargs)+sig0*F.interpolate(out, (h0,w0), **self._up_kwargs)
         _,_,hs,ws = x.size()
-        out = F.interpolate(out*(1-sig0), (hs,ws), **self._up_kwargs)+sig0*F.interpolate(out, (hs,ws), **self._up_kwargs)
+        edge0 = F.interpolate(sig0, (hs,ws), **self._up_kwargs)
+        out = F.interpolate(out*(1-sig0), (hs,ws), **self._up_kwargs)+edge0*F.interpolate(out, (hs,ws), **self._up_kwargs)
         return out
 
 class Context(nn.Module):
