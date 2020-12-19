@@ -86,10 +86,6 @@ class dfpn8_gsfHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.project012 = nn.Sequential(nn.Conv2d(32*3, 256, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU()
-                                   )
         self.conv6 = nn.Sequential(nn.Conv2d(256, out_channels, 1))
         self.sig0 = nn.Sequential(nn.Conv2d(32*3, 1, 1, padding=0, dilation=1, bias=True),
                                   nn.Sigmoid()
@@ -119,8 +115,9 @@ class dfpn8_gsfHead(nn.Module):
         out = out + se*out
         out = self.gff(out)
         #
-        out = torch.cat([out, gp.expand_as(out)], dim=1)
+        
         p01 = self.project01(out)
+        out = torch.cat([out, gp.expand_as(out)], dim=1)
         out = self.project012(out)
         _,_,h0,w0 = c0.size()
         _,_,h1,w1 = c1.size()
