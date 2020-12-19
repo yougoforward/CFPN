@@ -84,10 +84,7 @@ class dfpn8_gsfHead(nn.Module):
                                    )
         self.project012 = nn.Sequential(nn.Conv2d(256+64, 256, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(256),
-                                   nn.ReLU(),
-                                   nn.Conv2d(256, 256, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU(),
+                                   nn.ReLU()
                                    )
         self.conv6 = nn.Sequential(nn.Conv2d(256, out_channels, 1))
     def forward(self, c0,c1,c2,c3,c4):
