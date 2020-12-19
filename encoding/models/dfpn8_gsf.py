@@ -21,8 +21,8 @@ class dfpn8_gsf(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c0, c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c0,c1,c2,c3,c4)
-        x = F.interpolate(x, imsize, **self._up_kwargs)
+        x = self.head(x,c0,c1,c2,c3,c4)
+        # x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
             auxout = self.auxlayer(c3)
@@ -82,15 +82,15 @@ class dfpn8_gsfHead(nn.Module):
                                    norm_layer(32),
                                    nn.ReLU(),
                                    )
-        self.project012 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU(),
-                                   )
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(256, out_channels, 1))
+        # self.project012 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(256),
+        #                            nn.ReLU(),
+        #                            )
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         self.sig0 = nn.Sequential(nn.Conv2d(32*3, 1, 1, padding=0, dilation=1, bias=True),
                                   nn.Sigmoid()
                                    )
-    def forward(self, c0,c1,c2,c3,c4):
+    def forward(self, x,c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
@@ -118,7 +118,7 @@ class dfpn8_gsfHead(nn.Module):
         
         p01 = self.project01(out)
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-        out = self.project012(out)
+        out = self.conv6(out)
         _,_,h0,w0 = c0.size()
         _,_,h1,w1 = c1.size()
         
@@ -131,9 +131,11 @@ class dfpn8_gsfHead(nn.Module):
         edge2 = F.interpolate(sig0, (h,w), **self._up_kwargs)
         
         
-        out = F.interpolate(out*(1-edge2), (h1,w1), **self._up_kwargs)
-        out = F.interpolate(out*(1-edge1), (h0,w0), **self._up_kwargs)
-        return self.conv6(out*(1-sig0))
+        out = F.interpolate(out*(1-edge2), (h1,w1), **self._up_kwargs)+edge2*F.interpolate(out, (h1,w1), **self._up_kwargs)
+        out = F.interpolate(out*(1-edge1), (h0,w0), **self._up_kwargs)+edge1*F.interpolate(out, (h0,w0), **self._up_kwargs)
+        _,_,hs,ws = x.size()
+        out = F.interpolate(out*(1-sig0), (hs,ws), **self._up_kwargs)+sig0*F.interpolate(out, (hs,ws), **self._up_kwargs)
+        return out
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
