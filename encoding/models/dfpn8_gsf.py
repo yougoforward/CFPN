@@ -118,6 +118,7 @@ class dfpn8_gsfHead(nn.Module):
         p01 = F.interpolate(p01, (h0,w0), **self._up_kwargs)
         p0 = self.project0(c0)
         p1 = self.project1(c1)
+        p1 = F.interpolate(p1, (h0,w0), **self._up_kwargs)
         out = self.project012(torch.cat([p0,p1,p01], dim=1))
         return self.conv6(out)
 
