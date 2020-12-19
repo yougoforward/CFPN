@@ -78,15 +78,22 @@ class dfpn8_gsfHead(nn.Module):
                                    norm_layer(32),
                                    nn.ReLU(),
                                    )
-        self.project01 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+        self.project01 = nn.Sequential(nn.Conv2d(inter_channels, 32, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(32),
+                                   nn.ReLU(),
+                                   )
+        self.project012 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.project012 = nn.Sequential(nn.Conv2d(256+64, 256, 1, padding=0, dilation=1, bias=False),
+        self.project012 = nn.Sequential(nn.Conv2d(32*3, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU()
                                    )
         self.conv6 = nn.Sequential(nn.Conv2d(256, out_channels, 1))
+        self.sig0 = nn.Sequential(nn.Conv2d(32*3, 1, 1, padding=0, dilation=1, bias=True),
+                                  nn.Sigmoid()
+                                   )
     def forward(self, c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -114,13 +121,22 @@ class dfpn8_gsfHead(nn.Module):
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         p01 = self.project01(out)
+        out = self.project012(out)
         _,_,h0,w0 = c0.size()
+        _,_,h1,w1 = c1.size()
+        
         p01 = F.interpolate(p01, (h0,w0), **self._up_kwargs)
         p0 = self.project0(c0)
-        p1 = self.project1(c1)
+        p1 = self.project1(c1)        
         p1 = F.interpolate(p1, (h0,w0), **self._up_kwargs)
-        out = self.project012(torch.cat([p0,p1,p01], dim=1))
-        return self.conv6(out)
+        sig0 = self.sig0(torch.cat([p0,p1,p01], dim=1))
+        edge1 = F.interpolate(sig0, (h1,w1), **self._up_kwargs)
+        edge2 = F.interpolate(sig0, (h,w), **self._up_kwargs)
+        
+        
+        out = F.interpolate(out*(1-edge2), (h1,w1), **self._up_kwargs)
+        out = F.interpolate(out*(1-edge1), (h0,w0), **self._up_kwargs)
+        return self.conv6(out*(1-sig0))
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
