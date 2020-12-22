@@ -66,8 +66,8 @@ class dfpn8_gsfHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         
-        self.localsr1=localSR(256, out_channelst, up_kwargs)
-        self.localsr0=localSR(128, out_channelst, up_kwargs)
+        self.localsr1=localSR(256, out_channels, up_kwargs)
+        self.localsr0=localSR(128, out_channels, up_kwargs)
     def forward(self, x,c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
