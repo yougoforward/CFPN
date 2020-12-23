@@ -1,3 +1,4 @@
+from encoding.models.fpn_psaa import get_fpn_psaa
 from .model_zoo import get_model
 from .model_store import get_model_file
 from .base import *
@@ -44,6 +45,7 @@ from .vgg1x1_spool_iter import *
 from .vgg1x1_spool_full import *
 from .fatnet import *
 from .fatnet1 import *
+from .fpn_psaa import *
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
     models = {
@@ -69,6 +71,7 @@ def get_segmentation_model(name, **kwargs):
         'fpn_pam': get_fpn_pam,
         'fpn_aspp': get_fpn_aspp,
         'fpn_psp': get_fpn_psp,
+        'fpn_psaa': get_fpn_psaa,
         
         'object_gsnet': get_object_gsnet,
         'object_center_gsnet': get_object_center_gsnet,
