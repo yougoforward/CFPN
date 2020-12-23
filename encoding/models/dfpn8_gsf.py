@@ -97,10 +97,10 @@ class dfpn8_gsfHead(nn.Module):
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         out = self.conv6(out)
         
-        out2 = self.localsr1(c1, out)
-        out2 = self.localsr0(c0, out2)
+        out1 = self.localsr1(c1, out)
+        out2 = self.localsr0(c0, out1)
 
-        return [out2, out]
+        return [out2, out1, out]
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):

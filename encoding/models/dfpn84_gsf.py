@@ -20,8 +20,8 @@ class dfpn84_gsf(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4)
+        c0, c1, c2, c3, c4 = self.base_forward(x)
+        x = self.head(c0,c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
@@ -52,14 +52,14 @@ class dfpn84_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.pam = PAM_Module2(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.pam = PAM_Module2(in_dim=in_channels, key_dim=in_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.context4 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
@@ -71,8 +71,9 @@ class dfpn84_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-    def forward(self, c1,c2,c3,c4):
+    def forward(self, c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
+        c4 = self.pam(c4)
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
                 
@@ -93,8 +94,8 @@ class dfpn84_gsfHead(nn.Module):
         # se
         se = self.se(gp)
         out = out + se*out
-        out = self.pam(out)
-        # out = self.gff(out)
+        # out = self.pam(out)
+        out = self.gff(out)
         
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
@@ -206,7 +207,7 @@ class PAM_Module2(nn.Module):
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
+        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(value_dim),
                                    nn.ReLU(),
                                     )
@@ -224,8 +225,8 @@ class PAM_Module2(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        xp = self.pool(x)
-        # xp = x
+        # xp = self.pool(x)
+        xp = x
         m_batchsize, C, height, width = x.size()
         m_batchsize, C, hp, wp = xp.size()
         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
