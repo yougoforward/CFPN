@@ -141,6 +141,7 @@ class ASPP_Module(nn.Module):
             norm_layer(out_channels),
             nn.ReLU(True))
 
+
     def forward(self, x):
         feat0 = self.b0(x)
         feat1 = self.b1(x)
@@ -169,18 +170,30 @@ class PSAA_Module(nn.Module):
             nn.Conv2d(4*inter_channels, out_channels, 1, bias=False),
             norm_layer(out_channels),
             nn.ReLU(True))
-        self.psaa_conv = nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
+        self.psaa_conv = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, bias=False),
                                     norm_layer(out_channels),
                                     nn.ReLU(True),
                                     nn.Conv2d(out_channels, 4, 1, bias=True),
                                     nn.Sigmoid())
+        self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                            norm_layer(out_channels),
+                            nn.ReLU(True))
+        self.se = nn.Sequential(
+                            nn.Conv2d(out_channels, out_channels, 1, bias=True),
+                            nn.Sigmoid())
 
     def forward(self, x):
         feat0 = self.b0(x)
         feat1 = self.b1(x)
         feat2 = self.b2(x)
         feat3 = self.b3(x)
-        feat4 = self.b4(x)
+        # feat4 = self.b4(x)
+        n, c, h, w = feat0.size()
+        #gp
+        gp = self.gap(x)
+        se = self.se(gp)
+        feat4 = gp.expand(n, c, h, w)
         
         psaa_att = self.psaa_conv(x)
         psaa_att_list = torch.split(psaa_att, 1, dim=1)
@@ -190,6 +203,6 @@ class PSAA_Module(nn.Module):
 
         # y = torch.cat((feat0, feat1, feat2, feat3, feat4), 1)
         out = self.project(y)
-        out = torch.cat([out, feat4], dim=1)
+        out = torch.cat([out+out*se, feat4], dim=1)
 
         return out
