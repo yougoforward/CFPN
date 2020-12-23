@@ -46,6 +46,7 @@ from .vgg1x1_spool_full import *
 from .fatnet import *
 from .fatnet1 import *
 from .fpn_psaa import *
+from .dpcan import *
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
     models = {
@@ -72,6 +73,7 @@ def get_segmentation_model(name, **kwargs):
         'fpn_aspp': get_fpn_aspp,
         'fpn_psp': get_fpn_psp,
         'fpn_psaa': get_fpn_psaa,
+        'dpcan': get_dpcan,
         
         'object_gsnet': get_object_gsnet,
         'object_center_gsnet': get_object_center_gsnet,

@@ -23,8 +23,125 @@ from .BoundaryLabelRelaxationLoss import ImgWtLossSoftNLL
 
 torch_ver = torch.__version__[:3]
 
-__all__ = ['SegmentationLosses', 'SegmentationLosses_contour', 'SegmentationLosses_contour_BoundaryRelax', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_object', 'SegmentationLosses_objectcut', 'SegmentationLosses_BoundaryRelax','SegmentationLosses_BoundaryRelax3','SegmentationLosses_BoundaryRelax5', 'SegmentationLosses_SR']
+__all__ = ['SegmentationLosses', 'SegmentationLosses_contour', 'SegmentationLosses_contour_BoundaryRelax', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_object', 'SegmentationLosses_objectcut', 'SegmentationLosses_BoundaryRelax','SegmentationLosses_BoundaryRelax3','SegmentationLosses_BoundaryRelax5', 'SegmentationLosses_SR', 'SegmentationLosses2','SegmentationLosses3']
 
+
+class SegmentationLosses2(CrossEntropyLoss):
+    """2D Cross Entropy Loss with Auxilary Loss"""
+    def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
+                 aux=False, aux_weight=0.4, weight=None,
+                 size_average=True, ignore_index=-1, reduction='mean'):
+        super(SegmentationLosses2, self).__init__(weight, ignore_index=ignore_index, reduction=reduction)
+        self.ignore_index = ignore_index
+        self.se_loss = se_loss
+        self.aux = aux
+        self.nclass = nclass
+        self.se_weight = se_weight
+        self.aux_weight = aux_weight
+        self.bceloss = BCELoss(weight, reduction=reduction)
+        self.bce = BCEWithLogitsLoss(weight=None, size_average=None, reduce=None, reduction='mean', pos_weight=None)
+    def forward(self, *inputs):
+        if not self.se_loss and not self.aux:
+            return super(SegmentationLosses2, self).forward(*inputs)
+        elif not self.se_loss:
+            # *preds, target = tuple(inputs)
+            # pred1, pred2, pred3 = tuple(preds[0])
+            pred1, pred2, pred3, target = tuple(inputs)
+            loss1 = super(SegmentationLosses2, self).forward(pred1, target)
+            valid = (target!=self.ignore_index).unsqueeze(1)
+            target_cp = target.clone()
+            target_cp[target_cp==self.ignore_index] = 0
+            n,c,h,w = pred2.size()
+            onehot_label = F.one_hot(target_cp, num_classes =self.nclass).float()
+            loss2 = self.bce(pred2[valid.expand(n,c,h,w)], onehot_label.permute(0,3,1,2)[valid.expand(n,c,h,w)])
+            loss3 = super(SegmentationLosses2, self).forward(pred3, target)
+            return loss1 + loss2 + self.aux_weight * loss3
+        elif not self.aux:
+            pred, se_pred, target = tuple(inputs)
+            se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred)
+            loss1 = super(SegmentationLosses2, self).forward(pred, target)
+            loss2 = self.bceloss(torch.sigmoid(se_pred), se_target)
+            return loss1 + self.se_weight * loss2
+        else:
+            pred1, se_pred, pred2, target = tuple(inputs)
+            se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred1)
+            loss1 = super(SegmentationLosses2, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses2, self).forward(pred2, target)
+            loss3 = self.bceloss(torch.sigmoid(se_pred), se_target)
+            return loss1 + self.aux_weight * loss2 + self.se_weight * loss3
+
+    @staticmethod
+    def _get_batch_label_vector(target, nclass):
+        # target is a 3D Variable BxHxW, output is 2D BxnClass
+        batch = target.size(0)
+        tvect = Variable(torch.zeros(batch, nclass))
+        for i in range(batch):
+            hist = torch.histc(target[i].cpu().data.float(), 
+                               bins=nclass, min=0,
+                               max=nclass-1)
+            vect = hist>0
+            tvect[i] = vect
+        return tvect
+
+class SegmentationLosses3(CrossEntropyLoss):
+    """2D Cross Entropy Loss with Auxilary Loss"""
+    def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
+                 aux=False, aux_weight=0.4, weight=None,
+                 size_average=True, ignore_index=-1, reduction='mean'):
+        super(SegmentationLosses3, self).__init__(weight, ignore_index=ignore_index, reduction=reduction)
+        self.ignore_index = ignore_index
+        self.se_loss = se_loss
+        self.aux = aux
+        self.nclass = nclass
+        self.se_weight = se_weight
+        self.aux_weight = aux_weight
+        self.bceloss = BCELoss(weight, reduction=reduction)
+        self.bce = BCEWithLogitsLoss(weight=None, size_average=None, reduce=None, reduction='mean', pos_weight=None)
+    def forward(self, *inputs):
+        if not self.se_loss and not self.aux:
+            return super(SegmentationLosses3, self).forward(*inputs)
+        elif not self.se_loss:
+            # *preds, target = tuple(inputs)
+            # pred1, pred2, pred3 = tuple(preds[0])
+            pred1, pred2, pred3, pred4, target = tuple(inputs)
+            loss1 = super(SegmentationLosses3, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses3, self).forward(pred2, target)
+
+            valid = (target!=self.ignore_index).unsqueeze(1)
+            target_cp = target.clone()
+            target_cp[target_cp==self.ignore_index] = 0
+            n,c,h,w = pred3.size()
+            onehot_label = F.one_hot(target_cp, num_classes =self.nclass).float()
+            loss3 = self.bce(pred3[valid.expand(n,c,h,w)], onehot_label.permute(0,3,1,2)[valid.expand(n,c,h,w)])
+            loss4 = super(SegmentationLosses3, self).forward(pred4, target)
+            return loss1 + 0.2*loss2 +0.2*loss3 + self.aux_weight * loss4
+        elif not self.aux:
+            pred, se_pred, target = tuple(inputs)
+            se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred)
+            loss1 = super(SegmentationLosses3, self).forward(pred, target)
+            loss2 = self.bceloss(torch.sigmoid(se_pred), se_target)
+            return loss1 + self.se_weight * loss2
+        else:
+            pred1, se_pred, pred2, target = tuple(inputs)
+            se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred1)
+            loss1 = super(SegmentationLosses3, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses3, self).forward(pred2, target)
+            loss3 = self.bceloss(torch.sigmoid(se_pred), se_target)
+            return loss1 + self.aux_weight * loss2 + self.se_weight * loss3
+
+    @staticmethod
+    def _get_batch_label_vector(target, nclass):
+        # target is a 3D Variable BxHxW, output is 2D BxnClass
+        batch = target.size(0)
+        tvect = Variable(torch.zeros(batch, nclass))
+        for i in range(batch):
+            hist = torch.histc(target[i].cpu().data.float(), 
+                               bins=nclass, min=0,
+                               max=nclass-1)
+            vect = hist>0
+            tvect[i] = vect
+        return tvect
+    
 class FocalLoss(nn.Module):
     def __init__(self, gamma=0, alpha=None, size_average=True):
         super(FocalLoss, self).__init__()
