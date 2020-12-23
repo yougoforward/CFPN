@@ -236,7 +236,7 @@ class PAM_Module2(nn.Module):
         proj_value = self.val(xp).view(m_batchsize, -1, wp*hp)
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
-        out = out.view(m_batchsize, C, height, width)
+        out = out.view(m_batchsize, -1, height, width)
 
         # out = self.refine(torch.cat([x, out], dim=1))
         # out = x + out
