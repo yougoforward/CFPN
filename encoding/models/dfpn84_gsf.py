@@ -52,14 +52,14 @@ class dfpn84_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.pam = PAM_Module2(in_dim=in_channels, key_dim=in_channels//8,value_dim=inter_channels,out_dim=in_channels,norm_layer=norm_layer)
+        self.pam = PAM_Module2(in_dim=in_channels, key_dim=in_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.context4 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
@@ -207,11 +207,11 @@ class PAM_Module2(nn.Module):
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 3, padding=1, dilation=1, bias=False),
+        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(value_dim),
                                    nn.ReLU(),
                                     )
-        self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 1, padding=0, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_dim),
                                    nn.ReLU(),
                                     )
