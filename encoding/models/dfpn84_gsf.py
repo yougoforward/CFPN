@@ -59,7 +59,7 @@ class dfpn84_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.context4 = Context(in_channels, inter_channels, inter_channels, 8, norm_layer)
         self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels), nn.ReLU())
         self.context3 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
@@ -211,10 +211,10 @@ class PAM_Module2(nn.Module):
                                    norm_layer(value_dim),
                                    nn.ReLU(),
                                     )
-        # self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(out_dim),
-        #                            nn.ReLU(),
-        #                             )
+        self.refine = nn.Sequential(nn.Conv2d(in_dim+value_dim, out_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_dim),
+                                   nn.ReLU(),
+                                    )
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
@@ -234,10 +234,9 @@ class PAM_Module2(nn.Module):
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
         proj_value = self.val(xp).view(m_batchsize, -1, wp*hp)
-        
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, -1, height, width)
 
-        # out = self.refine(torch.cat([x, out], dim=1))
+        out = self.refine(torch.cat([x, out], dim=1))
         # out = x + out
         return out
