@@ -20,8 +20,8 @@ class fpn_psaa(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4)
+        c0, c1, c2, c3, c4 = self.base_forward(x)
+        x = self.head(c0, c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
@@ -52,7 +52,7 @@ class fpn_psaaHead(nn.Module):
         # self.aspp = ASPP_Module(in_channels, 256, inter_channels, atrous_rates, norm_layer, up_kwargs)
         self.psaa = PSAA_Module(in_channels, 512, inter_channels, atrous_rates, norm_layer, up_kwargs)
 
-    def forward(self, c1,c2,c3,c4):
+    def forward(self, c0, c1,c2,c3,c4):
         _,_, h,w = c2.size()
                
         out3 = self.localUp4(c3, c4)  
