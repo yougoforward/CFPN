@@ -73,8 +73,8 @@ class dfpn84_gsfHead(nn.Module):
                                    )
     def forward(self, c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
-        c4 = self.pam(c4)
-        cat4, p4_1, p4_8=self.context4(c4)
+        c4p = self.pam(c4)
+        cat4, p4_1, p4_8=self.context4(c4p)
         p4 = self.project4(cat4)
                 
         out3 = self.localUp4(c3, p4)
