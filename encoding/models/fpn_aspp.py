@@ -97,6 +97,17 @@ class localUp(nn.Module):
                                    norm_layer(out_channels),
                                    )
         self.relu = nn.ReLU()
+        
+    def forward(self, c1,c2):
+        n,c,h,w =c1.size()
+        c1p = self.connect(c1) # n, 64, h, w
+        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        c2p = self.project(c2)
+        out = torch.cat([c1p,c2p], dim=1)
+        out = self.refine(out)
+        out = self.project2(out)
+        out = self.relu(c2+out)
+        return out
 
 def get_fpn_aspp(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
