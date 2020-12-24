@@ -199,7 +199,7 @@ class PSAA_Module(nn.Module):
             nn.Conv2d(4*inter_channels, out_channels, 1, bias=False),
             norm_layer(out_channels),
             nn.ReLU(True))
-        self.psaa_conv = nn.Sequential(nn.Conv2d(in_channels+out_channels, inter_channels, 1, padding=0, bias=False),
+        self.psaa_conv = nn.Sequential(nn.Conv2d(in_channels+out_channels+inter_channels*4, inter_channels, 1, padding=0, bias=False),
                                     norm_layer(inter_channels),
                                     nn.ReLU(True),
                                     nn.Conv2d(inter_channels, 4, 1, bias=True),
@@ -224,7 +224,7 @@ class PSAA_Module(nn.Module):
         se = self.se(gp)
         feat4 = gp.expand(n, c, h, w)
         
-        psaa_att = self.psaa_conv(torch.cat([x, feat4], dim=1))
+        psaa_att = self.psaa_conv(torch.cat([x, feat0, feat1, feat2, feat3, feat4], dim=1))
         psaa_att_list = torch.split(psaa_att, 1, dim=1)
 
         y = torch.cat((psaa_att_list[0] * feat0, psaa_att_list[1] * feat1, psaa_att_list[2] * feat2,
