@@ -321,9 +321,9 @@ class SegmentationLosses_SR(CrossEntropyLoss):
         elif not self.se_loss:
             pred1, pred2, pred3, target = tuple(inputs)
             loss1 = super(SegmentationLosses_SR, self).forward(pred1, target)
-            loss2 = super(SegmentationLosses_SR, self).forward(pred2, target)
+            # loss2 = super(SegmentationLosses_SR, self).forward(pred2, target)
             loss3 = super(SegmentationLosses_SR, self).forward(pred3, target)
-            return loss1 + self.aux_weight * loss2 + self.aux_weight * loss3
+            return loss1 + self.aux_weight * loss3
         elif not self.aux:
             pred, se_pred, target = tuple(inputs)
             se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred)
