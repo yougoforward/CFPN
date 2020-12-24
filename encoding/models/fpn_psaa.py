@@ -50,7 +50,7 @@ class fpn_psaaHead(nn.Module):
         self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
         # self.aspp = ASPP_Module(in_channels, 256, inter_channels, atrous_rates, norm_layer, up_kwargs)
-        self.psaa = PSAA_Module(in_channels, 512, inter_channels, atrous_rates, norm_layer, up_kwargs)
+        self.psaa = PSAA_Module(in_channels, 256, inter_channels, atrous_rates, norm_layer, up_kwargs)
 
     def forward(self, c0, c1,c2,c3,c4):
         _,_, h,w = c2.size()
@@ -92,20 +92,20 @@ def get_fpn_psaa(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     return model
 
 def ASPPConv(in_channels, out_channels, atrous_rate, norm_layer):
-    # block = nn.Sequential(
-    #     nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate,
-    #               dilation=atrous_rate, bias=False),
-    #     norm_layer(out_channels),
-    #     nn.ReLU(True))
     block = nn.Sequential(
-        nn.Conv2d(in_channels, 512, 1, padding=0,
-                  dilation=1, bias=False),
-        norm_layer(512),
-        nn.ReLU(True),
-        nn.Conv2d(512, out_channels, 3, padding=atrous_rate,
+        nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate,
                   dilation=atrous_rate, bias=False),
         norm_layer(out_channels),
         nn.ReLU(True))
+    # block = nn.Sequential(
+    #     nn.Conv2d(in_channels, 512, 1, padding=0,
+    #               dilation=1, bias=False),
+    #     norm_layer(512),
+    #     nn.ReLU(True),
+    #     nn.Conv2d(512, out_channels, 3, padding=atrous_rate,
+    #               dilation=atrous_rate, bias=False),
+    #     norm_layer(out_channels),
+    #     nn.ReLU(True))
     return block
 
 class AsppPooling(nn.Module):
@@ -164,16 +164,16 @@ class PSAA_Module(nn.Module):
         self.b1 = ASPPConv(in_channels, inter_channels, rate1, norm_layer)
         self.b2 = ASPPConv(in_channels, inter_channels, rate2, norm_layer)
         self.b3 = ASPPConv(in_channels, inter_channels, rate3, norm_layer)
-        self.b4 = AsppPooling(in_channels, inter_channels, norm_layer, up_kwargs)
+        self.b4 = AsppPooling(in_channels, out_channels, norm_layer, up_kwargs)
 
         self.project = nn.Sequential(
             nn.Conv2d(4*inter_channels, out_channels, 1, bias=False),
             norm_layer(out_channels),
             nn.ReLU(True))
-        self.psaa_conv = nn.Sequential(nn.Conv2d(in_channels+out_channels, out_channels, 1, padding=0, bias=False),
-                                    norm_layer(out_channels),
+        self.psaa_conv = nn.Sequential(nn.Conv2d(in_channels+out_channels, inter_channels, 1, padding=0, bias=False),
+                                    norm_layer(inter_channels),
                                     nn.ReLU(True),
-                                    nn.Conv2d(out_channels, 4, 1, bias=True),
+                                    nn.Conv2d(inter_channels, 4, 1, bias=True),
                                     nn.Sigmoid())
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, out_channels, 1, bias=False),
