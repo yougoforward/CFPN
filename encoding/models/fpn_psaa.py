@@ -222,7 +222,7 @@ class PSAA_Module(nn.Module):
         #gp
         gp = self.gap(x)
         se = self.se(gp)
-        feat4 = gp.expand(n, c, h, w)
+        feat4 = gp.expand(n, 512, h, w)
         
         psaa_att = self.psaa_conv(torch.cat([x, feat0, feat1, feat2, feat3, feat4], dim=1))
         psaa_att_list = torch.split(psaa_att, 1, dim=1)
