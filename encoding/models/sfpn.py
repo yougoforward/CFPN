@@ -45,7 +45,7 @@ class sfpnHead(nn.Module):
         #                            nn.ReLU(),
         #                            )
 
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
