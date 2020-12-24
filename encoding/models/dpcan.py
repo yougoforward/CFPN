@@ -40,7 +40,7 @@ class dpcanHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs, atrous_rates):
         super(dpcanHead, self).__init__()
         inter_channels = in_channels // 4
-        self.aspp = ASPP_Module(in_channels, inter_channels, atrous_rates, norm_layer, up_kwargs)
+        self.aspp = ASPP_Module(in_channels, 256, atrous_rates, norm_layer, up_kwargs)
 
         self._up_kwargs = up_kwargs
         
@@ -95,25 +95,25 @@ class localUp(nn.Module):
         return out
 
 
-# def ASPPConv(in_channels, out_channels, atrous_rate, norm_layer):
-#     block = nn.Sequential(
-#         nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate,
-#                   dilation=atrous_rate, bias=False),
-#         norm_layer(out_channels),
-#         nn.ReLU(True))
-#     return block
-
 def ASPPConv(in_channels, out_channels, atrous_rate, norm_layer):
     block = nn.Sequential(
-        nn.Conv2d(in_channels, 512, 1, padding=0,
-                  dilation=1, bias=False),
-        norm_layer(512),
-        nn.ReLU(True),
-        nn.Conv2d(512, out_channels, 3, padding=atrous_rate,
+        nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate,
                   dilation=atrous_rate, bias=False),
         norm_layer(out_channels),
         nn.ReLU(True))
     return block
+
+# def ASPPConv(in_channels, out_channels, atrous_rate, norm_layer):
+#     block = nn.Sequential(
+#         nn.Conv2d(in_channels, 512, 1, padding=0,
+#                   dilation=1, bias=False),
+#         norm_layer(512),
+#         nn.ReLU(True),
+#         nn.Conv2d(512, out_channels, 3, padding=atrous_rate,
+#                   dilation=atrous_rate, bias=False),
+#         norm_layer(out_channels),
+#         nn.ReLU(True))
+#     return block
 
 class AsppPooling(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
@@ -150,13 +150,13 @@ class ASPP_Module(nn.Module):
         #     nn.ReLU(True),
         #     nn.Dropout2d(0.5, False))
         self.project1 = nn.Sequential(
-            nn.Conv2d(5*out_channels, out_channels, 1, bias=False),
-            norm_layer(out_channels),
+            nn.Conv2d(5*out_channels, 512, 1, bias=False),
+            norm_layer(512),
             nn.ReLU(True))
         
         self.project2 = nn.Sequential(
-            nn.Conv2d(5*out_channels, out_channels, 1, bias=False),
-            norm_layer(out_channels),
+            nn.Conv2d(5*out_channels, 512, 1, bias=False),
+            norm_layer(512),
             nn.ReLU(True))
 
     def forward(self, x):
