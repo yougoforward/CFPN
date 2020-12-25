@@ -225,13 +225,14 @@ class PSAA_Module(nn.Module):
         se = self.se(gp)
         feat4 = gp.expand(n, 512, h, w)
         
-        psaa_att = self.psaa_conv(torch.cat([x, feat0, feat1, feat2, feat3, feat4], dim=1))
-        psaa_att_list = torch.split(psaa_att, 1, dim=1)
+        # psaa_att = self.psaa_conv(torch.cat([x, feat0, feat1, feat2, feat3, feat4], dim=1))
+        # psaa_att_list = torch.split(psaa_att, 1, dim=1)
 
-        y = torch.cat((psaa_att_list[0] * feat0, psaa_att_list[1] * feat1, psaa_att_list[2] * feat2,
-                        psaa_att_list[3] * feat3), 1)
+        # y = torch.cat((psaa_att_list[0] * feat0, psaa_att_list[1] * feat1, psaa_att_list[2] * feat2,
+        #                 psaa_att_list[3] * feat3), 1)
 
         # y = torch.cat((feat0, feat1, feat2, feat3, feat4), 1)
+        y = torch.cat((feat0, feat1, feat2, feat3), 1)
         out = self.project(y)
         out = torch.cat([out+out*se, feat4], dim=1)
 
