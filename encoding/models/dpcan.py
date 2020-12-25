@@ -40,8 +40,8 @@ class dpcanHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs, atrous_rates):
         super(dpcanHead, self).__init__()
         inter_channels = in_channels // 4
-        self.aspp = ASPP_Module(in_channels, 256, atrous_rates, norm_layer, up_kwargs)
-
+        self.aspp1 = ASPP_Module(in_channels, 256, atrous_rates, norm_layer, up_kwargs)
+        self.aspp2 = ASPP_Module(in_channels, 256, atrous_rates, norm_layer, up_kwargs)
         self._up_kwargs = up_kwargs
         
         self.block1 = nn.Sequential(
@@ -63,7 +63,8 @@ class dpcanHead(nn.Module):
         out3 = self.localUp4(c3, c4)  
         out = self.localUp3(c2, out3)
         #dual path
-        aspp1, aspp2 = self.aspp(out)
+        aspp1 = self.aspp1(out)
+        aspp2 = self.aspp2(out)
 
         #class-aware attention
         concat = torch.cat([aspp1, aspp2], dim=1)
@@ -149,15 +150,11 @@ class ASPP_Module(nn.Module):
         #     norm_layer(out_channels),
         #     nn.ReLU(True),
         #     nn.Dropout2d(0.5, False))
-        self.project1 = nn.Sequential(
+        self.project = nn.Sequential(
             nn.Conv2d(5*out_channels, 512, 1, bias=False),
             norm_layer(512),
             nn.ReLU(True))
         
-        self.project2 = nn.Sequential(
-            nn.Conv2d(5*out_channels, 512, 1, bias=False),
-            norm_layer(512),
-            nn.ReLU(True))
 
     def forward(self, x):
         feat0 = self.b0(x)
@@ -167,10 +164,8 @@ class ASPP_Module(nn.Module):
         feat4 = self.b4(x)
 
         y = torch.cat((feat0, feat1, feat2, feat3, feat4), 1)
-        aspp1 = self.project1(y)
-        aspp2 = self.project2(y)
-
-        return aspp1, aspp2
+        aspp = self.project(y)
+        return aspp
 
 def get_dpcan(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                 root='~/.encoding/models', **kwargs):

@@ -48,15 +48,15 @@ class SegmentationLosses2(CrossEntropyLoss):
             # pred1, pred2, pred3 = tuple(preds[0])
             pred1, pred2, pred3, target = tuple(inputs)
             loss1 = super(SegmentationLosses2, self).forward(pred1, target)
-            # valid = (target!=self.ignore_index).unsqueeze(1)
-            # target_cp = target.clone()
-            # target_cp[target_cp==self.ignore_index] = 0
-            # n,c,h,w = pred2.size()
-            # onehot_label = F.one_hot(target_cp, num_classes =self.nclass).float()
-            # loss2 = self.bce(pred2[valid.expand(n,c,h,w)], onehot_label.permute(0,3,1,2)[valid.expand(n,c,h,w)])
+            valid = (target!=self.ignore_index).unsqueeze(1)
+            target_cp = target.clone()
+            target_cp[target_cp==self.ignore_index] = 0
+            n,c,h,w = pred2.size()
+            onehot_label = F.one_hot(target_cp, num_classes =self.nclass).float()
+            loss2 = self.bce(pred2[valid.expand(n,c,h,w)], onehot_label.permute(0,3,1,2)[valid.expand(n,c,h,w)])
             loss3 = super(SegmentationLosses2, self).forward(pred3, target)
-            # return loss1 + loss2 + self.aux_weight * loss3
-            return loss1 + self.aux_weight * loss3
+            return loss1 + loss2 + self.aux_weight * loss3
+            # return loss1 + self.aux_weight * loss3
         elif not self.aux:
             pred, se_pred, target = tuple(inputs)
             se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred)
