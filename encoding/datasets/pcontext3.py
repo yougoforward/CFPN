@@ -104,7 +104,7 @@ class ContextSegmentation3(BaseDataset):
         #         label += onehot_label[i:i+h, j:j+w, :]
         # label[label>1] = 1
         # label = label[:,:,:self.NUM_CLASS]
-        # sum_label = torch.sum(label, dim=2, keepdim=False)
+        # sum_label = torch.sum(label, dim=2, keepdim=False) 
         
         np_mask = np.array(onehot_mask).astype('int32')
         for i in range(-border,border+1):
