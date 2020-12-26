@@ -206,10 +206,6 @@ class PAM_Module2(nn.Module):
 
         self.query_conv = nn.Conv2d(in_channels=value_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=value_dim, out_channels=key_dim, kernel_size=1)
-        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(value_dim),
-                                   nn.ReLU(),
-                                    )
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
