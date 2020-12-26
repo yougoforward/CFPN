@@ -20,8 +20,8 @@ class cfpn(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4)
+        c0, c1, c2, c3, c4 = self.base_forward(x)
+        x = self.head(c0,c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
@@ -51,7 +51,7 @@ class cfpnHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        # self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -70,7 +70,7 @@ class cfpnHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-    def forward(self, c1,c2,c3,c4):
+    def forward(self, c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
@@ -91,9 +91,9 @@ class cfpnHead(nn.Module):
         #gp
         gp = self.gap(c4)    
         # se
-        se = self.se(gp)
-        out = out + se*out
-        # out = self.gff(out)
+        # se = self.se(gp)
+        # out = out + se*out
+        out = self.gff(out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         return self.conv6(out)

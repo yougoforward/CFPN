@@ -122,20 +122,20 @@ def get_fpn_psaa(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     return model
 
 def ASPPConv(in_channels, out_channels, atrous_rate, norm_layer):
-    block = nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate,
-                  dilation=atrous_rate, bias=False),
-        norm_layer(out_channels),
-        nn.ReLU(True))
     # block = nn.Sequential(
-    #     nn.Conv2d(in_channels, 512, 1, padding=0,
-    #               dilation=1, bias=False),
-    #     norm_layer(512),
-    #     nn.ReLU(True),
-    #     nn.Conv2d(512, out_channels, 3, padding=atrous_rate,
+    #     nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate,
     #               dilation=atrous_rate, bias=False),
     #     norm_layer(out_channels),
     #     nn.ReLU(True))
+    block = nn.Sequential(
+        nn.Conv2d(in_channels, 512, 1, padding=0,
+                  dilation=1, bias=False),
+        norm_layer(512),
+        nn.ReLU(True),
+        nn.Conv2d(512, out_channels, 3, padding=atrous_rate,
+                  dilation=atrous_rate, bias=False),
+        norm_layer(out_channels),
+        nn.ReLU(True))
     return block
 
 class AsppPooling(nn.Module):
