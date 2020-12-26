@@ -95,12 +95,13 @@ class dfpn8_gsfHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
+        edge1 = self.contour1(c1, out)
         #
         
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         out = self.conv6(out)
         
-        edge1 = self.contour1(c1, out)
+        
         out1 = self.localsr1(edge1, out)
         return [out1, out]
         # out2 = self.localsr0(c0, out1)
@@ -173,7 +174,7 @@ class localSR(nn.Module):
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
         out = self.project2(out)
-        out = c2+outboundary
+        out = c2+out
         return out
     
 class Boundary(nn.Module):
@@ -190,10 +191,7 @@ class Boundary(nn.Module):
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(nn.Conv2d(inter_channels*2, inter_channels, 3, padding=1, dilation=1, bias=False),
                                     norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
+                                   nn.ReLU()
                                     )
         self.project2 = nn.Sequential(nn.Conv2d(inter_channels, 1, 1, padding=0, dilation=1, bias=True),
                                       nn.Sigmoid()
