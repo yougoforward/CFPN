@@ -66,7 +66,7 @@ class dfpn8_gsfHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         
-        self.localsr1=localSR(256, out_channels, up_kwargs)
+        self.localsr1=localSR(1, out_channels, up_kwargs)
         self.localsr0=localSR(128, out_channels, up_kwargs)
         
         self.contour1 = Boundary(256, inter_channels, norm_layer, up_kwargs)
