@@ -207,9 +207,9 @@ class SE_Module(nn.Module):
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
 
-        self.gamma = nn.Sequential(nn.Conv2d(in_dim, in_dim//8, 1, bias=False),
+        self.gamma = nn.Sequential(nn.Conv2d(in_dim, in_dim//16, 1, bias=False),
                             nn.ReLU(True),
-                            nn.Conv2d(in_dim//8, in_dim, 1, bias=True),
+                            nn.Conv2d(in_dim//16, in_dim, 1, bias=True),
                             nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
