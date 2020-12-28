@@ -21,9 +21,9 @@ class cfpn(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c0, c1, c2, c3, c4 = self.base_forward(x)
-        x = self.head(c0,c1,c2,c3,c4)
+        x, xe = self.head(c0,c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
-        outputs = [x]
+        outputs = [x, xe]
         if self.aux:
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
@@ -70,6 +70,10 @@ class cfpnHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        
+        self.seloss = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+                            nn.Dropout2d(0.1),
+                            nn.Conv2d(in_channels, out_channels, 1, bias=True))
     def forward(self, c0,c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -96,7 +100,8 @@ class cfpnHead(nn.Module):
         out = self.gff(out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-        return self.conv6(out)
+        out = self.conv6(out)
+        return out, self.seloss(c4)
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
