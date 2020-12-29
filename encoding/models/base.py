@@ -132,8 +132,8 @@ class BaseNet(nn.Module):
     def base_forward(self, x):
         x = self.pretrained.conv1(x)
         x = self.pretrained.bn1(x)
-        c0 = self.pretrained.relu(x)
-        x = self.pretrained.maxpool(c0)
+        x = self.pretrained.relu(x)
+        x = self.pretrained.maxpool(x)
         c1 = self.pretrained.layer1(x)
         c2 = self.pretrained.layer2(c1)
         c3 = self.pretrained.layer3(c2)
@@ -142,7 +142,7 @@ class BaseNet(nn.Module):
         if self.jpu:
             return self.jpu(c1, c2, c3, c4)
         else:
-            return c0, c1, c2, c3, c4
+            return c1, c2, c3, c4
 
     def evaluate(self, x, target=None):
         pred = self.forward(x)

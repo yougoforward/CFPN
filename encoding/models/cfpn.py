@@ -20,8 +20,8 @@ class cfpn(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c0, c1, c2, c3, c4 = self.base_forward(x)
-        x, xe = self.head(c0,c1,c2,c3,c4)
+        c1, c2, c3, c4 = self.base_forward(x)
+        x, xe = self.head(c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x, xe]
         if self.aux:
@@ -74,7 +74,7 @@ class cfpnHead(nn.Module):
         self.seloss = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Dropout2d(0.1),
                             nn.Conv2d(in_channels, out_channels, 1, bias=True))
-    def forward(self, c0,c1,c2,c3,c4):
+    def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
