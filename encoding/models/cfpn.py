@@ -71,9 +71,9 @@ class cfpnHead(nn.Module):
                                    nn.ReLU(),
                                    )
         
-        self.seloss = nn.Sequential(nn.AdaptiveAvgPool2d(1),
+        self.seloss = nn.Sequential(
                             nn.Dropout2d(0.1),
-                            nn.Conv2d(in_channels, out_channels, 1, bias=True))
+                            nn.Conv2d(inter_channels, out_channels, 1, bias=True))
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
@@ -101,7 +101,7 @@ class cfpnHead(nn.Module):
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
         out = self.conv6(out)
-        return out, self.seloss(c4)
+        return out, self.seloss(gp)
 
 class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
