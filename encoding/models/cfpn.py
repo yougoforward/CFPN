@@ -71,9 +71,7 @@ class cfpnHead(nn.Module):
                                    nn.ReLU(),
                                    )
         
-        self.seloss = nn.Sequential(
-                            nn.Dropout2d(0.1),
-                            nn.Conv2d(inter_channels, out_channels, 1, bias=True))
+        self.seloss = nn.Conv2d(inter_channels, out_channels, 1, bias=True)
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
