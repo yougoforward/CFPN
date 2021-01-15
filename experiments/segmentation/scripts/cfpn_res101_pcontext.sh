@@ -2,7 +2,7 @@
 # train
 python -m experiments.segmentation.train --dataset pcontext \
     --model cfpn --aux --base-size 520 --crop-size 520 \
-    --backbone resnet101 --checkname cfpn_res101_pcontext --se-loss
+    --backbone resnet101 --checkname cfpn_res101_pcontext 
 
 #test [single-scale]
 python -m experiments.segmentation.test_whole --dataset pcontext \
