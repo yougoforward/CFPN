@@ -46,7 +46,7 @@ class pamHead(nn.Module):
                                    )
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
         
-        self.pam = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.pam = ori_PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
@@ -69,22 +69,19 @@ def get_pam(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     return model
 
 
-class PAM_Module(nn.Module):
+class ori_PAM_Module(nn.Module):
     """ Position attention module"""
     #Ref from SAGAN
     def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
-        super(PAM_Module, self).__init__()
+        super(ori_PAM_Module, self).__init__()
         self.chanel_in = in_dim
-        # self.pool = nn.MaxPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.val = nn.Sequential(nn.Conv2d(in_dim, value_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(value_dim),
-                                   nn.ReLU(),
-                                    )
-        self.softmax = nn.Softmax(dim=-1)
+        self.value_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim, kernel_size=1)
+        # self.gamma = nn.Parameter(torch.zeros(1))
 
+        self.softmax = nn.Softmax(dim=-1)
     def forward(self, x):
         """
             inputs :
@@ -93,18 +90,18 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        # xp = self.pool(x)
-        xp = x
         m_batchsize, C, height, width = x.size()
-        m_batchsize, C, hp, wp = xp.size()
         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
-        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
+        proj_key = self.key_conv(x).view(m_batchsize, -1, width*height)
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
-        proj_value = self.val(xp).view(m_batchsize, -1, wp*hp)
-        
+        proj_value = self.value_conv(x).view(m_batchsize, -1, width*height)
+
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
 
+        # out = self.gamma*out + x
+        out = out + x
         return out
 
+    

@@ -14,7 +14,7 @@ import torchvision.transforms as transform
 from torch.nn.parallel.scatter_gather import gather
 
 import encoding.utils as utils
-from encoding.nn import SegmentationLosses, SyncBatchNorm, BatchNorm, SegmentationLosses_sgpu
+from encoding.nn import SegmentationLosses, SyncBatchNorm
 from encoding.parallel import DataParallelModel, DataParallelCriterion
 from encoding.datasets import get_segmentation_dataset
 from encoding.models import get_segmentation_model
@@ -48,19 +48,11 @@ class Trainer():
         self.valloader = data.DataLoader(testset, batch_size=args.batch_size,
                                          drop_last=False, shuffle=False, **kwargs)
         self.nclass = trainset.num_class
-        
-        norm_layer = BatchNorm
-        loss_layer = SegmentationLosses_sgpu
-        if torch.cuda.device_count()>1:
-            norm_layer = SyncBatchNorm
-            loss_layer = SegmentationLosses
-            
-
         # model
         model = get_segmentation_model(args.model, dataset = args.dataset,
                                        backbone = args.backbone, dilated = args.dilated,
                                        lateral = args.lateral, jpu = args.jpu, aux = args.aux,
-                                       se_loss = args.se_loss, norm_layer = norm_layer,
+                                       se_loss = args.se_loss, norm_layer = SyncBatchNorm,
                                        base_size = args.base_size, crop_size = args.crop_size)
         # print(model)
         # optimizer using different LR
@@ -74,7 +66,7 @@ class Trainer():
         optimizer = torch.optim.SGD(params_list, lr=args.lr,
             momentum=args.momentum, weight_decay=args.weight_decay)
         # criterions
-        self.criterion = loss_layer(se_loss=args.se_loss, aux=args.aux,
+        self.criterion = SegmentationLosses(se_loss=args.se_loss, aux=args.aux,
                                             nclass=self.nclass, 
                                             se_weight=args.se_weight,
                                             aux_weight=args.aux_weight)
@@ -146,8 +138,7 @@ class Trainer():
         # Fast test during the training
         def eval_batch(model, image, target):
             outputs = model(image)
-            if torch.cuda.device_count()>1:
-                outputs = gather(outputs, 0, dim=0)
+            outputs = gather(outputs, 0, dim=0)
             pred = outputs[0]
             target = target.cuda()
             correct, labeled = utils.batch_pix_accuracy(pred.data, target)

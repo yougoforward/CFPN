@@ -6,9 +6,9 @@ from .pascal_aug import VOCAugSegmentation
 from .pcontext import ContextSegmentation
 from .cityscapes import CitySegmentation
 from .cocostuff import CocostuffSegmentation
-from .pcontext3 import ContextSegmentation3
-from .pcontext5 import ContextSegmentation5
-from .pcontext_br import ContextSegmentation_br
+
+from .CamVid import CamVidSegmentation
+
 datasets = {
     'coco': COCOSegmentation,
     'ade20k': ADE20KSegmentation,
@@ -17,9 +17,7 @@ datasets = {
     'pcontext': ContextSegmentation,
     'citys': CitySegmentation,
     'cocostuff': CocostuffSegmentation,
-    'pcontext3': ContextSegmentation3,
-    'pcontext5': ContextSegmentation5,
-    'pcontext_br': ContextSegmentation_br,
+    'camvid': CamVidSegmentation,
 }
 
 def get_segmentation_dataset(name, **kwargs):

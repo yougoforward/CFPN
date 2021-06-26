@@ -24,12 +24,10 @@ def get_model(name, **kwargs):
         The model.
     """
     models = {
-        'fcn_resnet50_pcontext': get_fcn_resnet50_pcontext,
         'encnet_resnet50_pcontext': get_encnet_resnet50_pcontext,
         'encnet_resnet101_pcontext': get_encnet_resnet101_pcontext,
         'encnet_resnet50_ade': get_encnet_resnet50_ade,
         'encnet_resnet101_ade': get_encnet_resnet101_ade,
-        'fcn_resnet50_ade': get_fcn_resnet50_ade,
         'psp_resnet50_ade': get_psp_resnet50_ade,
         }
     name = name.lower()

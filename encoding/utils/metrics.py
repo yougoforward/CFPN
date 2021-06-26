@@ -52,7 +52,7 @@ class SegmentationMetric(object):
         pixAcc = 1.0 * self.total_correct / (np.spacing(1) + self.total_label)
         IoU = 1.0 * self.total_inter / (np.spacing(1) + self.total_union)
         mIoU = IoU.mean()
-        return pixAcc, mIoU
+        return pixAcc, mIoU, IoU
  
     def reset(self):
         self.total_inter = 0

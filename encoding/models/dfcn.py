@@ -11,13 +11,15 @@ import torch.nn as nn
 from torch.nn.functional import interpolate
 
 from .base import BaseNet
+from .fcn import FCNHead
 
-__all__ = ['FCN', 'get_fcn']
 
-class FCN(BaseNet):
+__all__ = ['dfcn', 'get_dfcn']
+
+class dfcn(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(FCN, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
-        self.head = FCNHead(2048, nclass, norm_layer)
+        super(dfcn, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        self.head = dfcnHead(2048, nclass, norm_layer)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -35,9 +37,9 @@ class FCN(BaseNet):
         return tuple(outputs)
 
         
-class FCNHead(nn.Module):
+class dfcnHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer):
-        super(FCNHead, self).__init__()
+        super(dfcnHead, self).__init__()
         inter_channels = in_channels // 4
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
@@ -49,13 +51,12 @@ class FCNHead(nn.Module):
         return self.conv5(x)
 
 
-def get_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_dfcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = FCN(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = dfcn(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
     return model
-
 

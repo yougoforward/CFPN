@@ -47,16 +47,15 @@ class fpnHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
 
-        self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
     def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
+        out = self.conv5(c4)
                
-        out3 = self.localUp4(c3, c4)  
-        out2 = self.localUp3(c2, out3)
-        
-        out = self.conv5(out2)
+        out3 = self.localUp4(c3, out)  
+        out = self.localUp3(c2, out3)
         
         return self.conv6(out)
 

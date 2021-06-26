@@ -75,6 +75,9 @@ class Options():
         # finetuning pre-trained models
         parser.add_argument('--ft', action='store_true', default= False,
                             help='finetuning on a different dataset')
+        # finetuning pre-trained models, keep last layer
+        parser.add_argument('--ignore-last-layer', action='store_true', default= False,
+                            help='ignore last layer of pretrained model')
         # evaluation option
         parser.add_argument('--split', default='val')
         parser.add_argument('--mode', default='testval')
@@ -101,9 +104,7 @@ class Options():
                 'pcontext': 80,
                 'ade20k': 120,
                 'cocostuff': 180,
-                'pcontext3': 80,
-                'pcontext5': 80,
-                'pcontext_br': 80,
+                'camvid': 50,
             }
             args.epochs = epoches[args.dataset.lower()]
         if args.batch_size is None:
@@ -113,15 +114,13 @@ class Options():
         if args.lr is None:
             lrs = {
                 'coco': 0.01,
-                'citys': 0.002,
+                'citys': 0.003,
                 'pascal_voc': 0.0001,
                 'pascal_aug': 0.001,
                 'pcontext': 0.001,
                 'ade20k': 0.004,
                 'cocostuff': 0.001,
-                'pcontext3': 0.001,
-                'pcontext5': 0.001,
-                'pcontext_br': 0.001,
+                'camvid': 0.001,
             }
             args.lr = lrs[args.dataset.lower()] / 16 * args.batch_size
         print(args)

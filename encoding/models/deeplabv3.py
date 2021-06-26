@@ -40,7 +40,7 @@ class DeepLabV3Head(nn.Module):
         self.aspp = ASPP_Module(in_channels, atrous_rates, norm_layer, up_kwargs)
         self.block = nn.Sequential(
             nn.Dropout2d(0.1, False),
-            nn.Conv2d(inter_channels, out_channels, 1))
+            nn.Conv2d(in_channels//8, out_channels, 1))
 
     def forward(self, x):
         x = self.aspp(x)
@@ -86,8 +86,8 @@ class ASPP_Module(nn.Module):
         self.b4 = AsppPooling(in_channels, out_channels, norm_layer, up_kwargs)
 
         self.project = nn.Sequential(
-            nn.Conv2d(5*out_channels, 2*out_channels, 1, bias=False),
-            norm_layer(2*out_channels),
+            nn.Conv2d(5*out_channels, out_channels, 1, bias=False),
+            norm_layer(out_channels),
             nn.ReLU(True))
 
     def forward(self, x):

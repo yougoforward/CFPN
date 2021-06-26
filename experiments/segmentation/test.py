@@ -24,7 +24,7 @@ from .option import Options
 
 def test(args):
     # output folder
-    outdir = args.save_folder+'_'+args.dataset
+    outdir = args.save_folder
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     # data transforms
@@ -57,7 +57,7 @@ def test(args):
         model.load_state_dict(checkpoint['state_dict'])
         print("=> loaded checkpoint '{}' (epoch {})".format(args.resume, checkpoint['epoch']))
 
-    # print(model)
+    print(model)
     scales = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25] if args.dataset == 'citys' else \
         [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
     if not args.ms:

@@ -24,7 +24,7 @@ from .option import Options
 
 def test(args):
     # output folder
-    outdir = args.save_folder+'_'+args.dataset
+    outdir = args.save_folder+'_'+args.dataset+"_"+args.model+"_"+args.backbone
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     # data transforms
@@ -60,7 +60,7 @@ def test(args):
     # print(model)
     # scales = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25] if args.dataset == 'citys' else \
     #     [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
-    scales = [0.5, 0.75, 1.0, 1.25, 1.5] if args.dataset == 'citys' else \
+    scales = [0.5, 1.0, 2.0] if args.dataset == 'citys' else \
         [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
     if not args.ms:
         scales = [1.0]
@@ -74,7 +74,7 @@ def test(args):
             with torch.no_grad():
                 predicts = evaluator.parallel_forward(image)
                 metric.update(dst, predicts)
-                pixAcc, mIoU = metric.get()
+                pixAcc, mIoU, IoU = metric.get()
                 tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
             with torch.no_grad():
@@ -85,6 +85,12 @@ def test(args):
                 mask = utils.get_mask_pallete(predict, args.dataset)
                 outname = os.path.splitext(impath)[0] + '.png'
                 mask.save(os.path.join(outdir, outname))
+                
+    # if 'val' in args.mode:
+    #     print("class name:")
+    #     print(testset.CLASSES)
+    #     print("class IoU:")
+    #     print(IoU)
 
 if __name__ == "__main__":
     args = Options().parse()
